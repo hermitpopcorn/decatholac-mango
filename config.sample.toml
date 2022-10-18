@@ -1,0 +1,13 @@
+token = "" # Discord bot token
+
+[[targets.bokuyaba]]
+name = "Bokuyaba"
+source = "https://mangacross.jp/api/comics/yabai.json?type=public"
+mode = "json"
+baseUrl = "https://mangacross.jp"
+[targets.bokuyaba.keys]
+chapters = "comic.episodes"
+number = "volume"
+title = "title"
+date = "publish_start"
+url = "page_url"
