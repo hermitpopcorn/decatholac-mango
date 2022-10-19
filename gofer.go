@@ -92,7 +92,7 @@ func startGofer(waiter *sync.WaitGroup, target target) {
 	waiter.Done()
 }
 
-func startGofers(targets *map[string]target) error {
+func startGofers() error {
 	// Set on progress flag; cancel if it's up
 	if currentlyFetchingTargets {
 		return &PreoccupiedError{}
@@ -101,7 +101,7 @@ func startGofers(targets *map[string]target) error {
 
 	// Iterate through targets
 	var waiter sync.WaitGroup
-	for _, target := range *targets {
+	for _, target := range config.Targets {
 		waiter.Add(1)
 
 		// Send gofer to work
@@ -114,6 +114,6 @@ func startGofers(targets *map[string]target) error {
 	time.Sleep(30 * time.Second)
 
 	currentlyFetchingTargets = false
-	log.Print("Fetching process finished.")
+	log.Print("Fetch process finished.")
 	return nil
 }

@@ -46,6 +46,13 @@ type chapter struct {
 	LoggedAt time.Time
 }
 
+type server struct {
+	Identifier            string
+	FeedChannelIdentifier string
+	LastAnnouncedAt       time.Time
+	IsAnnouncing          bool
+}
+
 // Read configuration file
 var config configuration
 
@@ -129,7 +136,7 @@ func main() {
 		},
 		{
 			Name:        "fetch",
-			Description: "Manually trigger the fetching process for new chapters.",
+			Description: "Manually trigger the fetch process for new chapters.",
 		},
 	}
 
@@ -220,12 +227,7 @@ func main() {
 				botched := false
 				var lastLoggedAt time.Time
 				for _, chapter := range *chapters {
-					_, err = s.ChannelMessageSendEmbed(channelId, &discordgo.MessageEmbed{
-						Type:      discordgo.EmbedTypeLink,
-						URL:       chapter.Url,
-						Title:     "[" + chapter.Manga + "] " + chapter.Title,
-						Timestamp: chapter.Date.In(time.FixedZone("JST", 9*60*60)).Format(time.RFC3339),
-					})
+					_, err = announceChapter(s, channelId, &chapter)
 					if err != nil {
 						log.Print(err.Error())
 						updateResponse(s, i.Interaction, "Something went wrong when announcing a chapter...")
@@ -260,11 +262,11 @@ func main() {
 		},
 		"fetch": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if currentlyFetchingTargets {
-				sendEphemeralResponse(s, i, "The fetching process is currently in progress.")
+				sendEphemeralResponse(s, i, "The fetch process is currently in progress.")
 				return
 			}
 
-			go startGofers(&config.Targets)
+			go startGofers()
 			sendEphemeralResponse(s, i, "Started the fetch process.")
 		},
 	}
@@ -289,8 +291,11 @@ func main() {
 	// Setup cron
 	cron := cron.New()
 	cron.AddFunc("@every 6h", func() {
-		log.Print("Fetching process triggered by cronjob.")
-		startGofers(&config.Targets)
+		log.Print("Fetch process triggered by cronjob.")
+		startGofers()
+
+		log.Print("Global announcement process triggered by cronjob.")
+		startAnnouncers()
 	})
 	cron.Start()
 

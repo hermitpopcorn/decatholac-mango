@@ -283,3 +283,41 @@ func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
 
 	return &chapters, nil
 }
+
+func getServers(db *sql.DB) ([]server, error) {
+	var servers []server
+
+	rows, err := db.Query("SELECT guildId, channelId, lastAnnouncedAt, isAnnouncing FROM Servers")
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var identifier string
+		var feedChannelIdentifier string
+		var lastAnnouncedAt time.Time
+		var isAnnouncingInt int
+		var isAnnouncing bool
+		err = rows.Scan(&identifier, &feedChannelIdentifier, &lastAnnouncedAt, &isAnnouncingInt)
+		if err != nil {
+			return nil, err
+		}
+
+		if isAnnouncingInt == 0 {
+			isAnnouncing = false
+		}
+		if isAnnouncingInt == 1 {
+			isAnnouncing = true
+		}
+
+		servers = append(servers, server{
+			Identifier:            identifier,
+			FeedChannelIdentifier: feedChannelIdentifier,
+			LastAnnouncedAt:       lastAnnouncedAt,
+			IsAnnouncing:          isAnnouncing,
+		})
+	}
+
+	return servers, nil
+}
