@@ -27,6 +27,9 @@ type target struct {
 
 	// JSON mode
 	Keys keys
+
+	// HTML mode
+	Tags tags
 }
 
 type keys struct {
@@ -35,6 +38,19 @@ type keys struct {
 	Title    string
 	Date     string
 	Url      string
+}
+
+type tags struct {
+	ChaptersTag     string
+	NumberTag       string
+	NumberAttribute string
+	TitleTag        string
+	TitleAttribute  string
+	DateTag         string
+	DateAttribute   string
+	DateFormat      string
+	UrlTag          string
+	UrlAttribute    string
 }
 
 type chapter struct {
