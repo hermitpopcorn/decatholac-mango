@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"os/signal"
@@ -40,6 +41,7 @@ type chapter struct {
 	Url    string
 }
 
+// Read configuration file
 var config configuration
 
 func init() {
@@ -55,8 +57,19 @@ func init() {
 	}
 }
 
+// Prepare database
+var db *sql.DB
+
+func init() {
+	var err error
+	db, err = openDatabase()
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+}
+
+// Initialize bot
 var session *discordgo.Session
-var channelID string
 
 func init() {
 	var err error
@@ -67,11 +80,13 @@ func init() {
 }
 
 func main() {
+	// Open session
 	err := session.Open()
 	if err != nil {
 		log.Panicln(err.Error())
 	}
 
+	// Register commands
 	commands := []*discordgo.ApplicationCommand{
 		{
 			Name:        "set-as-feed-channel",
@@ -83,9 +98,10 @@ func main() {
 		},
 	}
 
+	// Define command handlers
 	commandHandlers := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		"set-as-feed-channel": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			channelID = i.ChannelID
+			setFeedChannel(db, i.GuildID, i.ChannelID)
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
@@ -94,7 +110,12 @@ func main() {
 			})
 		},
 		"announce": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if len(channelID) < 1 {
+			channelId, err := getFeedChannel(db, i.GuildID)
+			if err != nil {
+				log.Panic(err.Error())
+			}
+
+			if len(channelId) < 1 {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
@@ -128,16 +149,22 @@ func main() {
 
 	defer session.Close()
 
+	// Exit on Ctrl+C
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 	log.Print("Press Ctrl+C to exit")
 	<-stop
 
 	log.Println("Goodbye...")
+
+	// Remove commands
 	for _, v := range registeredCommands {
 		err := session.ApplicationCommandDelete(session.State.User.ID, "", v.ID)
 		if err != nil {
 			log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
 		}
 	}
+
+	// Close database
+	db.Close()
 }
