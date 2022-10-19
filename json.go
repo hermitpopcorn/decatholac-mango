@@ -28,7 +28,18 @@ func parseJson(target *target, jsonString *string) ([]chapter, error) {
 		chapter := chapter{}
 
 		chapter.Manga = target.Name
-		chapter.Title = chapterJson[target.Keys.Title].(string)
+
+		keys := strings.Split(target.Keys.Title, "+")
+		if len(keys) == 1 {
+			chapter.Title = chapterJson[target.Keys.Title].(string)
+		} else if len(keys) > 1 {
+			var titleComponents []string
+			for _, k := range keys {
+				titleComponents = append(titleComponents, chapterJson[k].(string))
+			}
+			chapter.Title = strings.Join(titleComponents, " ")
+		}
+
 		chapter.Number = chapterJson[target.Keys.Number].(string)
 
 		// If the URL is relative, append the target's base URL

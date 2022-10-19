@@ -9,7 +9,7 @@ baseUrl = "https://mangacross.jp"
 [targets.bokuyaba.keys]
 chapters = "comic.episodes"
 number = "volume"
-title = "title"
+title = "volume+title"
 date = "publish_start"
 url = "page_url"
 

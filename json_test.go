@@ -16,7 +16,7 @@ func TestJsonParser(t *testing.T) {
 		Keys: keys{
 			Chapters: "comic.episodes",
 			Number:   "volume",
-			Title:    "title",
+			Title:    "volume+title",
 			Date:     "publish_start",
 			Url:      "page_url",
 		},
@@ -41,7 +41,7 @@ func TestJsonParser(t *testing.T) {
 	firstChapter := chapter{
 		Manga:  "Bokuyaba",
 		Number: "Karte.105",
-		Title:  "僕は負けたくない",
+		Title:  "Karte.105 僕は負けたくない",
 		Date:   firstDate,
 		Url:    "https://mangacross.jp/comics/yabai/112",
 	}
@@ -61,7 +61,7 @@ func TestJsonParser(t *testing.T) {
 	secondChapter := chapter{
 		Manga:  "Bokuyaba",
 		Number: "Karte.106",
-		Title:  "僕らは負けている",
+		Title:  "Karte.106 僕らは負けている",
 		Date:   secondDate,
 		Url:    "https://mangacross.jp/comics/yabai/113",
 	}
