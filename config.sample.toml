@@ -12,3 +12,9 @@ number = "volume"
 title = "title"
 date = "publish_start"
 url = "page_url"
+
+[[targets.shounenwokau]]
+name = "Shounen wo Kau"
+source = "https://comic-zenon.com/rss/series/13933686331687311931"
+ascendingSource = false
+mode = "rss"
