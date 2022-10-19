@@ -126,6 +126,10 @@ func main() {
 			Name:        "announce",
 			Description: "Print all unannounced feed items.",
 		},
+		{
+			Name:        "fetch",
+			Description: "Manually trigger the fetching process for new chapters.",
+		},
 	}
 
 	// Define command handlers
@@ -252,6 +256,15 @@ func main() {
 				sendEphemeralResponse(s, i, "Something went wrong when clearing the server flag...")
 				return
 			}
+		},
+		"fetch": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if currentlyFetchingTargets {
+				sendEphemeralResponse(s, i, "The fetching process is currently in progress.")
+				return
+			}
+
+			go startGofers(&config.Targets)
+			sendEphemeralResponse(s, i, "Started the fetch process.")
 		},
 	}
 

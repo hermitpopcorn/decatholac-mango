@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var currentlyFetchingTargets = false
@@ -108,6 +109,9 @@ func startGofers(targets *map[string]target) error {
 	}
 
 	waiter.Wait()
+
+	// Give it some time to rest
+	time.Sleep(30 * time.Second)
 
 	currentlyFetchingTargets = false
 	return nil
