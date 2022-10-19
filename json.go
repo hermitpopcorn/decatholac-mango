@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-func parseJson(target target, jsonString string) ([]chapter, error) {
+func parseJson(target *target, jsonString *string) ([]chapter, error) {
 	// Unpack the entire JSON
 	unmarshalled := make(map[string]any)
-	json.Unmarshal([]byte(jsonString), &unmarshalled)
+	json.Unmarshal([]byte(*jsonString), &unmarshalled)
 
 	// Delve for the array of objects marked by targets.Keys.Chapters key
 	chaptersJson := make([]any, 0)
@@ -27,6 +27,7 @@ func parseJson(target target, jsonString string) ([]chapter, error) {
 	collectData := func(chapterJson map[string]any) chapter {
 		chapter := chapter{}
 
+		chapter.Manga = target.Name
 		chapter.Title = chapterJson[target.Keys.Title].(string)
 		chapter.Number = chapterJson[target.Keys.Number].(string)
 

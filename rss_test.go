@@ -40,7 +40,7 @@ func TestRssParser(t *testing.T) {
 	}
 
 	// Parse
-	parsed, err := parseRss(testTarget, testRss)
+	parsed, err := parseRss(&testTarget, &testRss)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -56,13 +56,15 @@ func TestRssParser(t *testing.T) {
 		t.Error("The test itself failed (time parsing)")
 	}
 	firstChapter := chapter{
+		Manga:  "Shounen wo Kau",
 		Number: "zenon:episode:316112896807373040",
 		Title:  "第23話②  つなぐ",
 		Date:   firstDate,
 		Url:    "https://comic-zenon.com/episode/316112896807373040",
 	}
-	if parsed[0].Number != firstChapter.Number ||
+	if parsed[0].Manga != firstChapter.Manga ||
 		parsed[0].Title != firstChapter.Title ||
+		parsed[0].Number != firstChapter.Number ||
 		parsed[0].Url != firstChapter.Url ||
 		parsed[0].Date.Unix() != firstChapter.Date.Unix() {
 		t.Error("Different first element", parsed[0], firstChapter)
@@ -74,13 +76,15 @@ func TestRssParser(t *testing.T) {
 		t.Error("The test itself failed (time parsing)")
 	}
 	secondChapter := chapter{
+		Manga:  "Shounen wo Kau",
 		Number: "zenon:episode:316112896807373046",
 		Title:  "第24話① 決意",
 		Date:   secondDate,
 		Url:    "https://comic-zenon.com/episode/316112896807373046",
 	}
-	if parsed[1].Number != secondChapter.Number ||
+	if parsed[1].Manga != secondChapter.Manga ||
 		parsed[1].Title != secondChapter.Title ||
+		parsed[1].Number != secondChapter.Number ||
 		parsed[1].Url != secondChapter.Url ||
 		parsed[1].Date.Unix() != secondChapter.Date.Unix() {
 		t.Error("Different second element", parsed[1], secondChapter)

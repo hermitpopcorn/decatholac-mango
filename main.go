@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -13,7 +14,7 @@ import (
 
 type configuration struct {
 	Token   string
-	Targets map[string][]target
+	Targets map[string]target
 }
 
 type target struct {
@@ -36,10 +37,12 @@ type keys struct {
 }
 
 type chapter struct {
-	Number string
-	Title  string
-	Date   time.Time
-	Url    string
+	Manga    string
+	Number   string
+	Title    string
+	Date     time.Time
+	Url      string
+	LoggedAt time.Time
 }
 
 // Read configuration file
@@ -67,6 +70,32 @@ func init() {
 	if err != nil {
 		log.Panicln(err.Error())
 	}
+}
+
+// Helper functions
+func sendResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: message,
+		},
+	})
+}
+
+func sendEphemeralResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: message,
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
+}
+
+func updateResponse(s *discordgo.Session, i *discordgo.Interaction, message string) {
+	s.InteractionResponseEdit(i, &discordgo.WebhookEdit{
+		Content: &message,
+	})
 }
 
 // Initialize bot
@@ -102,34 +131,127 @@ func main() {
 	// Define command handlers
 	commandHandlers := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		"set-as-feed-channel": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			setFeedChannel(db, i.GuildID, i.ChannelID)
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "This channel has been set as the feed channel.",
-				},
-			})
+			var err error = nil
+			err = setFeedChannel(db, i.GuildID, i.ChannelID)
+			if err != nil {
+				log.Print(err.Error())
+				sendEphemeralResponse(s, i, "Something went wrong when setting the feed channel...")
+				return
+			}
+			sendResponse(s, i, "This channel has been set as the feed channel.")
 		},
 		"announce": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			channelId, err := getFeedChannel(db, i.GuildID)
+			var isAnnouncing bool
+			var err error = nil
+			// Check if the bot is working on announcing the chapters in this server
+			isAnnouncing, err = getAnnouncingServerFlag(db, i.GuildID)
 			if err != nil {
-				log.Panic(err.Error())
+				switch err.(type) {
+				case *NoFeedChannelSetError:
+					sendEphemeralResponse(s, i, "You have to set the feed channel for this server first.")
+					return
+				default:
+					log.Print(err.Error())
+					sendEphemeralResponse(s, i, "Something went wrong when checking the server flags...")
+					return
+				}
 			}
 
-			if len(channelId) < 1 {
+			if isAnnouncing {
+				sendEphemeralResponse(s, i, "The bot is working, so hold on.")
+				return
+			}
+
+			// Set the "is announcing" flag to true
+			err = setAnnouncingServerFlag(db, i.GuildID, true)
+			if err != nil {
+				log.Print(err.Error())
+				sendEphemeralResponse(s, i, "Something went wrong when setting the server flags...")
+				return
+			}
+
+			// Get the feed channel ID
+			var channelId string
+			channelId, err = getFeedChannel(db, i.GuildID)
+			if err != nil {
+				var nf *NoFeedChannelSetError
+				if errors.As(err, &nf) {
+					sendEphemeralResponse(s, i, "You have to set the feed channel for this server first.")
+					setAnnouncingServerFlag(db, i.GuildID, false)
+					return
+				}
+				log.Print(err.Error())
+				sendEphemeralResponse(s, i, "Something went wrong when getting the feed channel...")
+				setAnnouncingServerFlag(db, i.GuildID, false)
+				return
+			}
+
+			// Fetch all unnanounced chapters
+			chapters, err := getUnannouncedChapters(db, i.GuildID)
+			if err != nil {
+				var nf *NoFeedChannelSetError
+				if errors.As(err, &nf) {
+					sendEphemeralResponse(s, i, "You have to set the feed channel for this server first.")
+					setAnnouncingServerFlag(db, i.GuildID, false)
+					return
+				}
+				log.Print(err.Error())
+				sendEphemeralResponse(s, i, "Something went wrong when fetching the chapters...")
+				setAnnouncingServerFlag(db, i.GuildID, false)
+				return
+			}
+
+			if len(*chapters) > 0 {
+				// Say that chapters are found
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
-						Content: "The feed channel is yet to be set.",
+						Content: "Chapters found. Announcing...",
+						Flags:   discordgo.MessageFlagsEphemeral,
 					},
 				})
+
+				// Send all the chapters
+				botched := false
+				var lastLoggedAt time.Time
+				for _, chapter := range *chapters {
+					_, err = s.ChannelMessageSendEmbed(channelId, &discordgo.MessageEmbed{
+						Type:      discordgo.EmbedTypeLink,
+						URL:       chapter.Url,
+						Title:     "[" + chapter.Manga + "] " + chapter.Title,
+						Timestamp: chapter.Date.In(time.FixedZone("JST", 9*60*60)).Format(time.RFC3339),
+					})
+					if err != nil {
+						log.Print(err.Error())
+						updateResponse(s, i.Interaction, "Something went wrong when announcing a chapter...")
+						setAnnouncingServerFlag(db, i.GuildID, false)
+						botched = true
+						break
+					}
+
+					lastLoggedAt = chapter.LoggedAt
+				}
+
+				err = setLastAnnouncedTime(db, i.GuildID, lastLoggedAt)
+				if err != nil {
+					log.Print(err.Error())
+					sendEphemeralResponse(s, i, "Something went wrong when setting the last announcement timestamp...")
+				}
+
+				if !botched {
+					updateResponse(s, i.Interaction, "Announcing finished.")
+				}
+			} else {
+				sendEphemeralResponse(s, i, "There are no new chapters to announce.")
 			}
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "To be implemented. Sorry!",
-				},
-			})
+
+			// Clear the "is announcing" flag back to false
+			err = setAnnouncingServerFlag(db, i.GuildID, false)
+			if err != nil {
+				log.Print(err.Error())
+				sendEphemeralResponse(s, i, "Something went wrong when clearing the server flag...")
+				return
+			}
 		},
 	}
 

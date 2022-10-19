@@ -1,6 +1,6 @@
 token = "" # Discord bot token
 
-[[targets.bokuyaba]]
+[targets.bokuyaba]
 name = "Bokuyaba"
 source = "https://mangacross.jp/api/comics/yabai.json?type=public"
 ascendingSource = false
@@ -13,7 +13,7 @@ title = "title"
 date = "publish_start"
 url = "page_url"
 
-[[targets.shounenwokau]]
+[targets.shounenwokau]
 name = "Shounen wo Kau"
 source = "https://comic-zenon.com/rss/series/13933686331687311931"
 ascendingSource = false

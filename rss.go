@@ -8,10 +8,10 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-func parseRss(target target, rssString string) ([]chapter, error) {
+func parseRss(target *target, rssString *string) ([]chapter, error) {
 	// Parse RSS string
 	parser := gofeed.NewParser()
-	feed, err := parser.ParseString(rssString)
+	feed, err := parser.ParseString(*rssString)
 	if err != nil {
 		return nil, err
 	}
@@ -20,6 +20,7 @@ func parseRss(target target, rssString string) ([]chapter, error) {
 	collectData := func(chapterFeedItem gofeed.Item, counter uint64) chapter {
 		chapter := chapter{}
 
+		chapter.Manga = target.Name
 		chapter.Title = chapterFeedItem.Title
 		if len(chapterFeedItem.GUID) > 0 {
 			chapter.Number = chapterFeedItem.GUID
