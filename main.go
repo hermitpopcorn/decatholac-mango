@@ -17,10 +17,11 @@ type configuration struct {
 }
 
 type target struct {
-	Name    string
-	Source  string
-	Mode    string
-	BaseUrl string
+	Name            string
+	Source          string
+	AscendingSource bool // Whether the source lists item A->Z instead of Z->A like normal
+	Mode            string
+	BaseUrl         string
 
 	// JSON mode
 	Keys keys

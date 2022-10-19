@@ -3,6 +3,7 @@ token = "" # Discord bot token
 [[targets.bokuyaba]]
 name = "Bokuyaba"
 source = "https://mangacross.jp/api/comics/yabai.json?type=public"
+ascendingSource = false
 mode = "json"
 baseUrl = "https://mangacross.jp"
 [targets.bokuyaba.keys]
