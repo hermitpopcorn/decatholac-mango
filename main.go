@@ -10,6 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/bwmarrin/discordgo"
+	"github.com/robfig/cron/v3"
 )
 
 type configuration struct {
@@ -284,6 +285,14 @@ func main() {
 	}
 
 	defer session.Close()
+
+	// Setup cron
+	cron := cron.New()
+	cron.AddFunc("@every 6h", func() {
+		log.Print("Fetching process triggered by cronjob.")
+		startGofers(&config.Targets)
+	})
+	cron.Start()
 
 	// Exit on Ctrl+C
 	stop := make(chan os.Signal, 1)

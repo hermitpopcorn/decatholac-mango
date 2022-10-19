@@ -114,5 +114,6 @@ func startGofers(targets *map[string]target) error {
 	time.Sleep(30 * time.Second)
 
 	currentlyFetchingTargets = false
+	log.Print("Fetching process finished.")
 	return nil
 }
