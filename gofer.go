@@ -53,6 +53,15 @@ func fetchChapters(target *target) ([]chapter, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else if target.Mode == "html" {
+		body, err = fetchBody(target.Source)
+		if err != nil {
+			return nil, err
+		}
+		chapters, err = parseHtml(target, &body)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return chapters, nil
@@ -62,32 +71,32 @@ func startGofer(waiter *sync.WaitGroup, target target) {
 	var chapters []chapter
 	var err error
 
-	log.Print("Gofer started for: ", target.Name)
+	log.Print("Gofer started for ", target.Name)
 
 	// Try fetching the source five times
 	var attempts uint = 5
 	for attempts = 5; attempts > 0; attempts-- {
 		chapters, err = fetchChapters(&target)
 		if err != nil {
-			log.Print("Failed fetching", err.Error(), "remaining attempt(s):", attempts)
+			log.Print("Failed fetching: ", err.Error(), "| Remaining attempt(s):", attempts)
 			continue
 		}
 
 		break
 	}
 	if attempts == 0 {
-		log.Print("Failed all fetching attempts for", target.Name)
+		log.Print("Failed all fetching attempts for ", target.Name)
 		return
 	}
 
 	// Save the chapters to DB
 	err = saveChapters(db, &chapters)
 	if err != nil {
-		log.Print("Failed saving chapters:", err.Error())
+		log.Print("Failed saving chapters: ", err.Error())
 		return
 	}
 
-	log.Print("Gofer finished for: ", target.Name)
+	log.Print("Gofer finished for ", target.Name)
 
 	waiter.Done()
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	"os"
 	"time"
 
@@ -227,6 +228,8 @@ func saveChapters(db *sql.DB, chapters *[]chapter) error {
 		check := stmt.QueryRow(chapter.Manga, chapter.Title, chapter.Number)
 		err = check.Scan()
 		if err == sql.ErrNoRows {
+			log.Print("Saving new chapter... [", chapter.Manga, "]: ", chapter.Title)
+
 			// Insert new row
 			stmt, err = db.Prepare("INSERT INTO Chapters (manga, title, number, url, date, loggedAt) VALUES (?, ?, ?, ?, ?, ?)")
 			if err != nil {
