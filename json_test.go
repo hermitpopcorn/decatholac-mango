@@ -7,9 +7,9 @@ import (
 
 func TestJsonParser(t *testing.T) {
 	// Prepare a pre-set JSON
-	testJson := `{"comic": {"episodes": [{"id": 16255,"volume": "Karte.106","sort_volume": 113,"page_count": 0,"title": "僕らは負けている","publish_start": "2022-10-11T10:00:00.000+09:00","publish_end": "2022-11-22T10:00:00.000+09:00","member_publish_start": "2022-10-11T10:00:00.000+09:00","member_publish_end": "2022-11-22T10:00:00.000+09:00","status": "public","page_url": "/comics/yabai/113","ogp_url": "/episode_ogps/original/missing.png","list_image_url": "https://mangacross.jp/images/episode/MP2afeZAmh091rWkMR1Fxhf6CoP3t8pdXob7mayRAo0/episode_thumbnail/thumb_single.png?1665121954","list_image_double_url": "https://mangacross.jp/images/episode/MP2afeZAmh091rWkMR1Fxhf6CoP3t8pdXob7mayRAo0/episode_thumbnail/thumb_double.png?1665121954","episode_next_date": "2022-10-25T00:00:00.000+09:00","next_date_customize_text": "","is_unlimited_comic": false},{"id": 16180,"volume": "Karte.105","sort_volume": 112,"page_count": 0,"title": "僕は負けたくない","publish_start": "2022-09-27T10:00:00.000+09:00","publish_end": "2022-11-08T10:00:00.000+09:00","member_publish_start": "2022-09-27T10:00:00.000+09:00","member_publish_end": "2022-11-08T10:00:00.000+09:00","status": "public","page_url": "/comics/yabai/112","ogp_url": "/episode_ogps/original/missing.png","list_image_url": "https://mangacross.jp/images/episode/2QetLttutv2RvbOB_smJ6RWE2A6G94i6q_-IE6kKF-g/episode_thumbnail/thumb_single.png?1663826886","list_image_double_url": "https://mangacross.jp/images/episode/2QetLttutv2RvbOB_smJ6RWE2A6G94i6q_-IE6kKF-g/episode_thumbnail/thumb_double.png?1663826886","episode_next_date": "2022-10-11T00:00:00.000+09:00","next_date_customize_text": "","is_unlimited_comic": false}]}}`
+	testJson := `{"comic": {"episodes": [{"id": 16255,"volume": "Chapter 106","sort_volume": 113,"page_count": 0,"title": "Dat Boi","publish_start": "2022-10-11T10:00:00.000+09:00","publish_end": "2022-11-22T10:00:00.000+09:00","member_publish_start": "2022-10-11T10:00:00.000+09:00","member_publish_end": "2022-11-22T10:00:00.000+09:00","status": "public","page_url": "/comics/json/113"},{"id": 16180,"volume": "Chapter 105","sort_volume": 112,"page_count": 0,"title": "Here comes","publish_start": "2022-09-27T10:00:00.000+09:00","publish_end": "2022-11-08T10:00:00.000+09:00","member_publish_start": "2022-09-27T10:00:00.000+09:00","member_publish_end": "2022-11-08T10:00:00.000+09:00","status": "public","page_url": "/comics/json/112"}]}}`
 	testTarget := target{
-		Name:            "Bokuyaba",
+		Name:            "JSON Test Manga",
 		Mode:            "json",
 		BaseUrl:         "https://mangacross.jp",
 		AscendingSource: false,
@@ -39,11 +39,11 @@ func TestJsonParser(t *testing.T) {
 		t.Error("The test itself failed (time parsing)")
 	}
 	firstChapter := chapter{
-		Manga:  "Bokuyaba",
-		Number: "Karte.105",
-		Title:  "Karte.105 僕は負けたくない",
+		Manga:  "JSON Test Manga",
+		Number: "Chapter 105",
+		Title:  "Chapter 105 Here comes",
 		Date:   firstDate,
-		Url:    "https://mangacross.jp/comics/yabai/112",
+		Url:    "https://mangacross.jp/comics/json/112",
 	}
 	if parsed[0].Manga != firstChapter.Manga ||
 		parsed[0].Title != firstChapter.Title ||
@@ -59,11 +59,11 @@ func TestJsonParser(t *testing.T) {
 		t.Error("The test itself failed (time parsing)")
 	}
 	secondChapter := chapter{
-		Manga:  "Bokuyaba",
-		Number: "Karte.106",
-		Title:  "Karte.106 僕らは負けている",
+		Manga:  "JSON Test Manga",
+		Number: "Chapter 106",
+		Title:  "Chapter 106 Dat Boi",
 		Date:   secondDate,
-		Url:    "https://mangacross.jp/comics/yabai/113",
+		Url:    "https://mangacross.jp/comics/json/113",
 	}
 	if parsed[1].Manga != secondChapter.Manga ||
 		parsed[1].Title != secondChapter.Title ||

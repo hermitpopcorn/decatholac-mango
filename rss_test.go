@@ -10,31 +10,31 @@ func TestRssParser(t *testing.T) {
 	testRss := `<?xml version="1.0"?>
 	<rss version="2.0" xmlns:giga="https://gigaviewer.com">
 		<channel>
-			<title>ゼノン編集部（少年を飼う）</title>
+			<title>RSS Test Publishing</title>
 			<pubDate>Fri, 23 Sep 2022 03:00:00 +0000</pubDate>
-			<link>https://comic-zenon.com/episode/13933686331689929651</link>
-			<description>森川藍は都内で働くバリキャリOL。残業や深夜帰宅は当たり前、結婚ラッシュどころか終電にすら乗れない日々を送っている。そんな彼女が拾ったのは、とびきり綺麗な16歳の男の子・凪沙だった。猫のようにマイペースな凪沙との出会いが、藍の日常を少しずつ変えていく…。年の差10歳以上、孤独なふたりの奇妙な同居生活。</description>
+			<link>https://comic-rss.com/title/11111</link>
+			<description>Lorem ipsum</description>
 			<docs>http://blogs.law.harvard.edu/tech/rss</docs>
 			<item>
-				<title>第24話① 決意</title>
-				<link>https://comic-zenon.com/episode/316112896807373046</link>
-				<guid isPermalink="false">zenon:episode:316112896807373046</guid>
-				<pubDate>Fri, 23 Sep 2022 03:00:00 +0000</pubDate>            <description>少年を飼う</description>
-				<enclosure url="https://cdn-img.comic-zenon.com/public/episode-thumbnail/316112896807373046-c2afd9f963ee8ea95449e8a0299acd1f" length="0" type="image/jpeg" />
-				<author>青井ぬゐ</author>
+				<title>Part 24: The Omega</title>
+				<link>https://comic-rss.com/episode/00024</link>
+				<guid isPermalink="false">00024</guid>
+				<pubDate>Fri, 23 Sep 2022 03:00:00 +0000</pubDate>
+				<enclosure url="https://cdn-img.comic-rss.com/public/episode-thumbnail/123" length="0" type="image/jpeg" />
+				<author>Noowee</author>
 			</item>
 			<item>
-				<title>第23話②  つなぐ</title>
-				<link>https://comic-zenon.com/episode/316112896807373040</link>
-				<guid isPermalink="false">zenon:episode:316112896807373040</guid>
-				<pubDate>Fri, 16 Sep 2022 03:00:00 +0000</pubDate>                <giga:freeTermStartDate>Fri, 23 Sep 2022 03:00:00 +0000</giga:freeTermStartDate>            <description>少年を飼う</description>
-				<enclosure url="https://cdn-img.comic-zenon.com/public/episode-thumbnail/316112896807373040-76c56eac4de078c8dbce48954765b47f" length="0" type="image/jpeg" />
-				<author>青井ぬゐ</author>
+				<title>Part 23: The Alpha</title>
+				<link>https://comic-rss.com/episode/00023</link>
+				<guid isPermalink="false">00023</guid>
+				<pubDate>Fri, 16 Sep 2022 03:00:00 +0000</pubDate>
+				<enclosure url="https://cdn-img.comic-rss.com/public/episode-thumbnail/321" length="0" type="image/jpeg" />
+				<author>Noowee</author>
 			</item>
 		</channel>
 	</rss>`
 	testTarget := target{
-		Name:            "Shounen wo Kau",
+		Name:            "RSS Test Publishing",
 		Mode:            "rss",
 		AscendingSource: false,
 	}
@@ -56,11 +56,11 @@ func TestRssParser(t *testing.T) {
 		t.Error("The test itself failed (time parsing)")
 	}
 	firstChapter := chapter{
-		Manga:  "Shounen wo Kau",
-		Number: "zenon:episode:316112896807373040",
-		Title:  "第23話②  つなぐ",
+		Manga:  "RSS Test Publishing",
+		Number: "00023",
+		Title:  "Part 23: The Alpha",
 		Date:   firstDate,
-		Url:    "https://comic-zenon.com/episode/316112896807373040",
+		Url:    "https://comic-rss.com/episode/00023",
 	}
 	if parsed[0].Manga != firstChapter.Manga ||
 		parsed[0].Title != firstChapter.Title ||
@@ -76,11 +76,11 @@ func TestRssParser(t *testing.T) {
 		t.Error("The test itself failed (time parsing)")
 	}
 	secondChapter := chapter{
-		Manga:  "Shounen wo Kau",
-		Number: "zenon:episode:316112896807373046",
-		Title:  "第24話① 決意",
+		Manga:  "RSS Test Publishing",
+		Number: "00024",
+		Title:  "Part 24: The Omega",
 		Date:   secondDate,
-		Url:    "https://comic-zenon.com/episode/316112896807373046",
+		Url:    "https://comic-rss.com/episode/00024",
 	}
 	if parsed[1].Manga != secondChapter.Manga ||
 		parsed[1].Title != secondChapter.Title ||
