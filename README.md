@@ -4,7 +4,7 @@
 ## What is this?
 decatholac MANGO (dM) is a Discord bot that fetches new manga chapter releases and then announce it to servers it's been registered to.
 
-Currently it can parse from JSON and RSS. Next on the list is HTML.
+Currently it can parse from HTML, JSON and RSS.
 
 ## Building
 - ```go test``` to make sure it runs fine.
