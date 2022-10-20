@@ -152,7 +152,7 @@ func main() {
 	commands := []*discordgo.ApplicationCommand{
 		{
 			Name:        "set-as-feed-channel",
-			Description: "Set current channel as the feed channel.",
+			Description: "Set current channel as the feed channel. You must have channel management permissions to do this.",
 		},
 		{
 			Name:        "announce",
@@ -196,6 +196,11 @@ func main() {
 	commandHandlers := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Set a channel as the guild's feed channel (also saves the guild into the database)
 		"set-as-feed-channel": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.Member.Permissions&discordgo.PermissionManageChannels == 0 {
+				sendEphemeralResponse(s, i, "You do not have the permission to set the feed channel.")
+				return
+			}
+
 			var err error = nil
 			err = setFeedChannel(db, i.GuildID, i.ChannelID)
 			if err != nil {
