@@ -12,7 +12,16 @@ Currently it can parse from HTML, JSON and RSS.
 - ```go run .``` or ```go build``` to build and/or run it.
 
 ## Commands
+### Guild/Server
 - ```/set-as-feed-channel``` to set the current channel as the feed channel.
+
+### User
+- ```/subscribe :title``` to subscribe to a certain manga title.
+- ```/unsubscribe :title``` to remove a subscription.
+
+The bot will mention subscribed users whenever there's a new chapter for the title.
+
+### Job
 - ```/fetch``` to trigger the bot to fetch for new chapters from the source.
 - ```/announce``` to trigger the bot to announce new chapters to the feed channel.
 
