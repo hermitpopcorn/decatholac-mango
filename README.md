@@ -13,7 +13,7 @@ Currently it can parse from HTML, JSON and RSS.
 
 ## Commands
 ### Guild/Server
-- ```/set-as-feed-channel``` to set the current channel as the feed channel.
+- ```/set-as-feed-channel``` to set the current channel as the feed channel. This requires "manage channels" permission.
 
 ### User
 - ```/subscribe :title``` to subscribe to a certain manga title.
