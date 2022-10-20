@@ -253,12 +253,18 @@ func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
 
 	var chapters []chapter
 
-	stmt, err := db.Prepare("SELECT manga, title, number, url, date, loggedAt FROM Chapters WHERE datetime(loggedAt) > datetime(?) ORDER BY datetime(loggedAt) ASC")
+	stmt, err := db.Prepare(`
+		SELECT manga, title, number, url, date, loggedAt
+		FROM Chapters
+		WHERE datetime(loggedAt) > datetime(?)
+		AND datetime(date) > datetime(?)
+		ORDER BY datetime(loggedAt) ASC
+	`)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := stmt.Query(lastAnnouncedAt)
+	rows, err := stmt.Query(lastAnnouncedAt, lastAnnouncedAt)
 	if err != nil {
 		return nil, err
 	}
