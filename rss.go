@@ -1,3 +1,5 @@
+// This is the parser for RSS mode.
+
 package main
 
 import (
@@ -45,7 +47,7 @@ func parseRss(target *target, rssString *string) ([]chapter, error) {
 		return chapter
 	}
 
-	// Loop over the JSON
+	// Loop over the feed items
 	chapters := make([]chapter, 0)
 	if target.AscendingSource {
 		for i := 0; i < len(feed.Items); i++ {

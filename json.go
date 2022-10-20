@@ -1,3 +1,5 @@
+// This is the parser for JSON mode.
+
 package main
 
 import (

@@ -1,3 +1,6 @@
+// The functions in this file handles anything related to the database,
+// be it querying for data or saving them.
+
 package main
 
 import (
@@ -9,12 +12,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// This error is thrown whenever a guild (Discord server)-related query is requested
+// but it requires the guild to have set a feed channel and it has not done that yet.
 type NoFeedChannelSetError struct{}
 
 func (e *NoFeedChannelSetError) Error() string {
 	return "The feed channel hasn't been set yet."
 }
 
+// Opens a local SQLite database.
 func openDatabase() (*sql.DB, error) {
 	if _, err := os.Stat("database.db"); err != nil {
 		os.Create("database.db")
@@ -36,6 +42,8 @@ func openDatabase() (*sql.DB, error) {
 	return db, nil
 }
 
+// Initializes the database.
+// This creates the neccessary tables if they don't exist yet.
 func initializeDatabase(db *sql.DB) error {
 	check := db.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Chapters'")
 	err := check.Scan()
@@ -74,6 +82,7 @@ func initializeDatabase(db *sql.DB) error {
 	return nil
 }
 
+// Pairs a channel ID to a guild ID (sets the channel as the guild's feed channel).
 func setFeedChannel(db *sql.DB, guildId string, channelId string) error {
 	stmt, err := db.Prepare("SELECT channelId FROM Servers WHERE guildId = ?")
 	if err != nil {
@@ -112,6 +121,7 @@ func setFeedChannel(db *sql.DB, guildId string, channelId string) error {
 	return nil
 }
 
+// Gets the guild's feed channel ID.
 func getFeedChannel(db *sql.DB, guildId string) (string, error) {
 	stmt, err := db.Prepare("SELECT channelId FROM Servers WHERE guildId = ?")
 	if err != nil {
@@ -128,6 +138,7 @@ func getFeedChannel(db *sql.DB, guildId string) (string, error) {
 	return currentChannelId, nil
 }
 
+// Gets the timestamp of when an announcement happens for a certain guild.
 func getLastAnnouncedTime(db *sql.DB, guildId string) (time.Time, error) {
 	stmt, err := db.Prepare("SELECT lastAnnouncedAt FROM Servers WHERE guildId = ?")
 	if err != nil {
@@ -144,6 +155,7 @@ func getLastAnnouncedTime(db *sql.DB, guildId string) (time.Time, error) {
 	return lastAnnouncedAt, nil
 }
 
+// Sets the timestamp of... see above.
 func setLastAnnouncedTime(db *sql.DB, guildId string, lastAnnouncedAt time.Time) error {
 	stmt, err := db.Prepare("UPDATE Servers SET lastAnnouncedAt = ? WHERE guildId = ?")
 	if err != nil {
@@ -166,6 +178,7 @@ func setLastAnnouncedTime(db *sql.DB, guildId string, lastAnnouncedAt time.Time)
 	return nil
 }
 
+// Gets the status for the announcing server flag of a certain guild.
 func getAnnouncingServerFlag(db *sql.DB, guildId string) (bool, error) {
 	stmt, err := db.Prepare("SELECT isAnnouncing FROM Servers WHERE guildId = ?")
 	if err != nil {
@@ -188,6 +201,7 @@ func getAnnouncingServerFlag(db *sql.DB, guildId string) (bool, error) {
 	return true, nil
 }
 
+// Sets the... see above.
 func setAnnouncingServerFlag(db *sql.DB, guildId string, announcing bool) error {
 	stmt, err := db.Prepare("UPDATE Servers SET isAnnouncing = ? WHERE guildId = ?")
 	if err != nil {
@@ -217,6 +231,7 @@ func setAnnouncingServerFlag(db *sql.DB, guildId string, announcing bool) error 
 	return nil
 }
 
+// Saves an array of chapters to the database.
 func saveChapters(db *sql.DB, chapters *[]chapter) error {
 	for _, chapter := range *chapters {
 		// Check if exists; only write if it doesn't
@@ -245,6 +260,13 @@ func saveChapters(db *sql.DB, chapters *[]chapter) error {
 	return nil
 }
 
+// Get unannounced chapters for a specific guild.
+// How a chapter is "unannounced" is determined by:
+// (1) the guild's lastAnnouncedAt; (2) the chapter's loggedAt; and (3) the chapter's publish date.
+// If a chapter is logged into the database AFTER a guild's last announcement timestamp,
+// it means the chapter is new and thus needs to be announced...
+// UNLESS that chapter was released BEFORE the guild's last announcement time,
+// which means the chapter is actually old, but was just logged into the database recently.
 func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
 	lastAnnouncedAt, err := getLastAnnouncedTime(db, guildId)
 	if err != nil {
@@ -293,6 +315,9 @@ func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
 	return &chapters, nil
 }
 
+// Gets all the guilds saved in the database.
+// Guilds are saved into the database whenever it sets a channel as its feed channel.
+// (see setFeedChannel() function)
 func getServers(db *sql.DB) ([]server, error) {
 	var servers []server
 

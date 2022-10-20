@@ -1,3 +1,5 @@
+// Gofers are small processes that fetches, parses, and saves chapter data.
+
 package main
 
 import (
@@ -8,14 +10,20 @@ import (
 	"time"
 )
 
+// To make sure not more than one gofer is running for one target,
+// this flag is raised to "true" when startGofers is called,
+// and startGofers can't run unless it's set to false.
 var currentlyFetchingTargets = false
 
+// This is just a custom error that's thrown whenever
+// startGofers() is called when the above flag is still up.
 type PreoccupiedError struct{}
 
 func (e *PreoccupiedError) Error() string {
 	return "The gofer is not done fetching yet."
 }
 
+// This turns a source URL into a string containing the response body.
 func fetchBody(url string) (string, error) {
 	response, err := http.Get(url)
 	if err != nil {
@@ -30,6 +38,7 @@ func fetchBody(url string) (string, error) {
 	return string(body), nil
 }
 
+// This fetches the source and then parses it according to the specified mode.
 func fetchChapters(target *target) ([]chapter, error) {
 	var body string
 	var chapters []chapter
@@ -67,6 +76,9 @@ func fetchChapters(target *target) ([]chapter, error) {
 	return chapters, nil
 }
 
+// This starts a gofer process.
+// It doesn't return anything because it's supposed to be called in a goroutine.
+// It does take a *sync.WaitGroup as a parameter so it can tell the main process that it's done, though.
 func startGofer(waiter *sync.WaitGroup, target target) {
 	var chapters []chapter
 	var err error
@@ -101,6 +113,8 @@ func startGofer(waiter *sync.WaitGroup, target target) {
 	waiter.Done()
 }
 
+// This is the "mother" gofer process.
+// It runs one gofer for every target.
 func startGofers() error {
 	// Set on progress flag; cancel if it's up
 	if currentlyFetchingTargets {
@@ -113,7 +127,7 @@ func startGofers() error {
 	for _, target := range config.Targets {
 		waiter.Add(1)
 
-		// Send gofer to work
+		// Send gofer to work in a parallel process
 		go startGofer(&waiter, target)
 	}
 
@@ -122,6 +136,7 @@ func startGofers() error {
 	// Give it some time to rest
 	time.Sleep(30 * time.Second)
 
+	// Take down flag and return
 	currentlyFetchingTargets = false
 	log.Print("Fetch process finished.")
 	return nil

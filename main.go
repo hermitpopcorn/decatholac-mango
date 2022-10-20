@@ -1,3 +1,8 @@
+// The main file.
+// After reading and opening the database, this file kickstarts the bot to start.
+// And then waits until the process is killed off by the user.
+// It also sets the cronjob for the gofers and announcers to start periodically.
+
 package main
 
 import (
@@ -97,6 +102,7 @@ func init() {
 }
 
 // Helper functions
+// Send a normal message as response
 func sendResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -106,6 +112,7 @@ func sendResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message 
 	})
 }
 
+// Send a message that only the user can read as response
 func sendEphemeralResponse(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -116,6 +123,7 @@ func sendEphemeralResponse(s *discordgo.Session, i *discordgo.InteractionCreate,
 	})
 }
 
+// Update a previous message that was sent as a response
 func updateResponse(s *discordgo.Session, i *discordgo.Interaction, message string) {
 	s.InteractionResponseEdit(i, &discordgo.WebhookEdit{
 		Content: &message,
@@ -158,6 +166,7 @@ func main() {
 
 	// Define command handlers
 	commandHandlers := map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+		// Set a channel as the guild's feed channel (also saves the guild into the database)
 		"set-as-feed-channel": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			var err error = nil
 			err = setFeedChannel(db, i.GuildID, i.ChannelID)
@@ -168,10 +177,12 @@ func main() {
 			}
 			sendResponse(s, i, "This channel has been set as the feed channel.")
 		},
+
+		// Manually trigger the announcement for the current guild (Discord server)
 		"announce": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			var isAnnouncing bool
 			var err error = nil
-			// Check if the bot is working on announcing the chapters in this server
+			// Check if the bot is working on announcing the chapters in this guild
 			isAnnouncing, err = getAnnouncingServerFlag(db, i.GuildID)
 			if err != nil {
 				switch err.(type) {
@@ -214,7 +225,7 @@ func main() {
 				return
 			}
 
-			// Fetch all unnanounced chapters
+			// Fetch all unannounced chapters
 			chapters, err := getUnannouncedChapters(db, i.GuildID)
 			if err != nil {
 				var nf *NoFeedChannelSetError
@@ -276,6 +287,8 @@ func main() {
 				return
 			}
 		},
+
+		// Manually trigger the gofers
 		"fetch": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if currentlyFetchingTargets {
 				sendEphemeralResponse(s, i, "The fetch process is currently in progress.")
@@ -287,12 +300,14 @@ func main() {
 		},
 	}
 
+	// Match the commands and the handlers
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if handler, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			handler(s, i)
 		}
 	})
 
+	// Registers the commands
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
 	for i, command := range commands {
 		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, "", command)

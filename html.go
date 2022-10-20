@@ -1,3 +1,5 @@
+// This is the parser for HTML mode.
+
 package main
 
 import (
@@ -7,6 +9,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+// Gets the text inside a DOM node.
+// OR, if the "attribute" parameter is specified, gets the value for that attribute.
 func getNodeText(node *goquery.Selection, tag string, attribute string) string {
 	var selectNode *goquery.Selection
 
@@ -32,6 +36,7 @@ func getNodeText(node *goquery.Selection, tag string, attribute string) string {
 	}
 }
 
+// Does the entire HTML parsing thing.
 func parseHtml(target *target, htmlString *string) ([]chapter, error) {
 	reader := strings.NewReader(*htmlString)
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -41,12 +46,13 @@ func parseHtml(target *target, htmlString *string) ([]chapter, error) {
 
 	var chapters = make([]chapter, 0)
 
-	// Get the chapters' list container tag
+	// Get the chapters' list container nodes
 	chapterNodes := doc.Find(target.Tags.ChaptersTag)
 	if chapterNodes.Length() < 1 {
 		return chapters, nil
 	}
 
+	// Loop over the chapter nodes.
 	chapterNodes.Each(func(i int, node *goquery.Selection) {
 		var chapter chapter
 		chapter.Manga = target.Name

@@ -1,3 +1,5 @@
+// This file handles the announcing of new chapters to guilds.
+
 package main
 
 import (
@@ -8,6 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Announce a single chapter to a certain guild's feed channel.
 func announceChapter(session *discordgo.Session, channelId string, chapter *chapter) (*discordgo.Message, error) {
 	message, err := session.ChannelMessageSendEmbed(channelId, &discordgo.MessageEmbed{
 		Type:      discordgo.EmbedTypeLink,
@@ -22,6 +25,10 @@ func announceChapter(session *discordgo.Session, channelId string, chapter *chap
 	return message, nil
 }
 
+// The "mother" announcer process.
+// This gets the list of all registered guilds and their unannounced chapters.
+// If found, it sends the new chapters to the guilds' feed channels,
+// and then logs the last announcement time of each guild.
 func startAnnouncers() error {
 	// Get the list of servers
 	servers, err := getServers(db)
@@ -34,6 +41,7 @@ func startAnnouncers() error {
 	for _, s := range servers {
 		waiter.Add(1)
 
+		// Run a parallel process for each server
 		go func(server server) {
 			log.Print("Starting announcement process for server ", server.Identifier, ".")
 
@@ -61,7 +69,7 @@ func startAnnouncers() error {
 				return
 			}
 
-			// Fetch all unnanounced chapters
+			// Fetch all unannounced chapters
 			chapters, err := getUnannouncedChapters(db, server.Identifier)
 			if err != nil {
 				log.Print(server.Identifier, err.Error())
