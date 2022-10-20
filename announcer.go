@@ -4,6 +4,7 @@ package main
 
 import (
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,13 +12,41 @@ import (
 )
 
 // Announce a single chapter to a certain guild's feed channel.
-func announceChapter(session *discordgo.Session, channelId string, chapter *chapter) (*discordgo.Message, error) {
-	message, err := session.ChannelMessageSendEmbed(channelId, &discordgo.MessageEmbed{
+func announceChapter(session *discordgo.Session, server *server, chapter *chapter) (*discordgo.Message, error) {
+	message, err := session.ChannelMessageSendEmbed(server.FeedChannelIdentifier, &discordgo.MessageEmbed{
 		Type:      discordgo.EmbedTypeLink,
 		URL:       chapter.Url,
 		Title:     "[" + chapter.Manga + "] " + chapter.Title,
 		Timestamp: chapter.Date.In(time.FixedZone("JST", 9*60*60)).Format(time.RFC3339),
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return message, nil
+}
+
+// Mention subscribers for announced chapter.
+func mentionSubscribers(session *discordgo.Session, server *server, chapter *chapter) (*discordgo.Message, error) {
+	userIds, err := getSubscribers(db, server.Identifier, chapter.Manga)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect mention string
+	var mentions []string
+	for _, userId := range userIds {
+		user, err := session.User(userId)
+		if err != nil {
+			continue
+		}
+
+		mentions = append(mentions, user.Mention())
+	}
+
+	// Send all mention strings in a single message
+	// TODO: Split the message if it's too long?
+	message, err := session.ChannelMessageSend(server.FeedChannelIdentifier, strings.Join(mentions, " "))
 	if err != nil {
 		return nil, err
 	}
@@ -81,19 +110,26 @@ func startAnnouncers() error {
 			if len(*chapters) > 0 {
 				// Send all the chapters
 				log.Print("Announcing new chapters for server ", server.Identifier, "...")
-				inserted := false
+				announced := false
 				var lastLoggedAt time.Time
+				// Loop for each chapter
 				for _, chapter := range *chapters {
-					_, err = announceChapter(session, server.FeedChannelIdentifier, &chapter)
+					_, err = announceChapter(session, &server, &chapter)
 					if err != nil {
+						log.Print(server.Identifier, err.Error())
 						break
 					}
 
+					mentionSubscribers(session, &server, &chapter)
+					if err != nil {
+						log.Print(server.Identifier, err.Error())
+					}
+
 					lastLoggedAt = chapter.LoggedAt
-					inserted = true
+					announced = true
 				}
 
-				if inserted {
+				if announced {
 					err = setLastAnnouncedTime(db, server.Identifier, lastLoggedAt)
 					if err != nil {
 						log.Print(server.Identifier, err.Error())

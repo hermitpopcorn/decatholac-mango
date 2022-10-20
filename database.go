@@ -20,6 +20,22 @@ func (e *NoFeedChannelSetError) Error() string {
 	return "The feed channel hasn't been set yet."
 }
 
+// This error is thrown whenever a user requests a subscription for a title,
+// but that title does not currently exist in the database.
+type TitleDoesNotExistError struct{}
+
+func (e *TitleDoesNotExistError) Error() string {
+	return "The specified title does not exist in the database yet."
+}
+
+// This error is thrown whenever a user requests removal of their subscription for a title,
+// but that subscription does not exist in the first place.
+type NoSubscriptionFoundError struct{}
+
+func (e *NoSubscriptionFoundError) Error() string {
+	return "The user is not subscribed to such title."
+}
+
 // Opens a local SQLite database.
 func openDatabase() (*sql.DB, error) {
 	if _, err := os.Stat("database.db"); err != nil {
@@ -72,6 +88,21 @@ func initializeDatabase(db *sql.DB) error {
 			'channelId'			VARCHAR(255),
 			'lastAnnouncedAt'	DATETIME,
 			'isAnnouncing'		INTEGER DEFAULT 0,
+			PRIMARY KEY('id' AUTOINCREMENT)
+		)`)
+		if err != nil {
+			return err
+		}
+	}
+
+	check = db.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Subscriptions'")
+	err = check.Scan()
+	if err == sql.ErrNoRows {
+		_, err := db.Exec(`CREATE TABLE 'Subscriptions' (
+			'id'				INTEGER,
+			'guildId'			VARCHAR(255) NOT NULL,
+			'userId'			VARCHAR(255) NOT NULL,
+			'title'				VARCHAR(255) NOT NULL,
 			PRIMARY KEY('id' AUTOINCREMENT)
 		)`)
 		if err != nil {
@@ -354,4 +385,105 @@ func getServers(db *sql.DB) ([]server, error) {
 	}
 
 	return servers, nil
+}
+
+// Checks if a manga title exists in the Chapters table.
+func checkMangaExistence(db *sql.DB, title string) (bool, error) {
+	stmt, err := db.Prepare("SELECT manga FROM Chapters WHERE manga = ? LIMIT 1")
+	if err != nil {
+		return false, err
+	}
+
+	check := stmt.QueryRow(title)
+	err = check.Scan()
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
+// Saves a subscription entry.
+func saveSubscription(db *sql.DB, userId string, guildId string, title string) error {
+	titleExists, err := checkMangaExistence(db, title)
+	if err != nil {
+		return err
+	}
+
+	if !titleExists {
+		return &TitleDoesNotExistError{}
+	}
+
+	stmt, err := db.Prepare("SELECT id FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
+	if err != nil {
+		return err
+	}
+
+	subscriptionExists := stmt.QueryRow(userId, guildId, title)
+	err = subscriptionExists.Scan()
+	if err == sql.ErrNoRows {
+		// Insert new row if none found
+		stmt, err = db.Prepare("INSERT INTO Subscriptions (userId, guildId, title) VALUES (?, ?, ?)")
+		if err != nil {
+			return err
+		}
+		_, err := stmt.Exec(userId, guildId, title)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Removes a subscription entry.
+func removeSubscription(db *sql.DB, userId string, guildId string, title string) error {
+	stmt, err := db.Prepare("SELECT id FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
+	if err != nil {
+		return err
+	}
+
+	subscriptionExists := stmt.QueryRow(userId, guildId, title)
+	err = subscriptionExists.Scan()
+	if err != sql.ErrNoRows {
+		// Remove if found
+		stmt, err = db.Prepare("DELETE FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
+		if err != nil {
+			return err
+		}
+		_, err := stmt.Exec(userId, guildId, title)
+		if err != nil {
+			return err
+		}
+	} else {
+		return &NoSubscriptionFoundError{}
+	}
+
+	return nil
+}
+
+// Get the list of user IDs that are subscribed to a certain title in a certain guild.
+func getSubscribers(db *sql.DB, guildId string, title string) ([]string, error) {
+	var userIds []string
+
+	stmt, err := db.Prepare("SELECT userId FROM Subscriptions WHERE guildId = ? AND title = ?")
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := stmt.Query(guildId, title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var userId string
+		err = rows.Scan(&userId)
+		if err != nil {
+			return nil, err
+		}
+		userIds = append(userIds, userId)
+	}
+
+	return userIds, nil
 }

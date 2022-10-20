@@ -162,6 +162,34 @@ func main() {
 			Name:        "fetch",
 			Description: "Manually trigger the fetch process for new chapters.",
 		},
+		{
+			Name:        "subscribe",
+			Description: "Tell the bot you want to be mentioned whenever a new chapter for a specific manga is announced.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Name:        "title",
+					Description: "The manga title you'd like to get subscribed to.",
+					Type:        discordgo.ApplicationCommandOptionString,
+					Required:    true,
+					MinLength:   func(i int) *int { return &i }(1),
+					MaxLength:   255,
+				},
+			},
+		},
+		{
+			Name:        "unsubscribe",
+			Description: "Cancels a subscription.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Name:        "title",
+					Description: "The manga title you'd like to not be subscibed to.",
+					Type:        discordgo.ApplicationCommandOptionString,
+					Required:    true,
+					MinLength:   func(i int) *int { return &i }(1),
+					MaxLength:   255,
+				},
+			},
+		},
 	}
 
 	// Define command handlers
@@ -251,16 +279,25 @@ func main() {
 				})
 
 				// Send all the chapters
+				var server = server{
+					Identifier:            i.GuildID,
+					FeedChannelIdentifier: channelId,
+				}
 				botched := false
 				var lastLoggedAt time.Time
 				for _, chapter := range *chapters {
-					_, err = announceChapter(s, channelId, &chapter)
+					_, err = announceChapter(s, &server, &chapter)
 					if err != nil {
-						log.Print(err.Error())
+						log.Print(server.Identifier, err.Error())
 						updateResponse(s, i.Interaction, "Something went wrong when announcing a chapter...")
 						setAnnouncingServerFlag(db, i.GuildID, false)
 						botched = true
 						break
+					}
+
+					_, err = mentionSubscribers(s, &server, &chapter)
+					if err != nil {
+						log.Print(server.Identifier, err.Error())
 					}
 
 					lastLoggedAt = chapter.LoggedAt
@@ -297,6 +334,44 @@ func main() {
 
 			go startGofers()
 			sendEphemeralResponse(s, i, "Started the fetch process.")
+		},
+
+		// Add a user and a specified manga title to the subscribe list
+		"subscribe": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			title := i.ApplicationCommandData().Options[0].StringValue()
+			err := saveSubscription(db, i.Member.User.ID, i.GuildID, title)
+			if err != nil {
+				switch err.(type) {
+				case *TitleDoesNotExistError:
+					sendEphemeralResponse(s, i, "That title does not exist.")
+					return
+				default:
+					log.Print(err.Error())
+					sendEphemeralResponse(s, i, "Something went wrong when trying to subscribe you...")
+					return
+				}
+			}
+
+			sendEphemeralResponse(s, i, "You are now subscribed to ["+title+"].")
+		},
+
+		// Add a user and a specified manga title to the subscribe list
+		"unsubscribe": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			title := i.ApplicationCommandData().Options[0].StringValue()
+			err := removeSubscription(db, i.Member.User.ID, i.GuildID, title)
+			if err != nil {
+				switch err.(type) {
+				case *NoSubscriptionFoundError:
+					sendEphemeralResponse(s, i, "You are not subscribed to that title.")
+					return
+				default:
+					log.Print(err.Error())
+					sendEphemeralResponse(s, i, "Something went wrong when trying to subscribe you...")
+					return
+				}
+			}
+
+			sendEphemeralResponse(s, i, "You are no longer subscribed to ["+title+"].")
 		},
 	}
 
