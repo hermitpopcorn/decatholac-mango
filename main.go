@@ -293,7 +293,7 @@ func main() {
 				for _, chapter := range *chapters {
 					_, err = announceChapter(s, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, err.Error())
+						log.Print(server.Identifier, ": ", err.Error())
 						updateResponse(s, i.Interaction, "Something went wrong when announcing a chapter...")
 						setAnnouncingServerFlag(db, i.GuildID, false)
 						botched = true
@@ -302,7 +302,7 @@ func main() {
 
 					_, err = mentionSubscribers(s, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, err.Error())
+						log.Print(server.Identifier, ": ", err.Error())
 					}
 
 					lastLoggedAt = chapter.LoggedAt

@@ -83,7 +83,7 @@ func startAnnouncers() error {
 			var isAnnouncing bool
 			isAnnouncing, err = getAnnouncingServerFlag(db, server.Identifier)
 			if err != nil {
-				log.Print(server.Identifier, err.Error())
+				log.Print(server.Identifier, ": ", err.Error())
 				waiter.Done()
 				return
 			}
@@ -97,7 +97,7 @@ func startAnnouncers() error {
 			// Set the "is announcing" flag to true
 			err = setAnnouncingServerFlag(db, server.Identifier, true)
 			if err != nil {
-				log.Print(server.Identifier, err.Error())
+				log.Print(server.Identifier, ": ", err.Error())
 				waiter.Done()
 				return
 			}
@@ -105,7 +105,7 @@ func startAnnouncers() error {
 			// Fetch all unannounced chapters
 			chapters, err := getUnannouncedChapters(db, server.Identifier)
 			if err != nil {
-				log.Print(server.Identifier, err.Error())
+				log.Print(server.Identifier, ": ", err.Error())
 				setAnnouncingServerFlag(db, server.Identifier, false)
 				waiter.Done()
 				return
@@ -120,13 +120,13 @@ func startAnnouncers() error {
 				for _, chapter := range *chapters {
 					_, err = announceChapter(session, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, err.Error())
+						log.Print(server.Identifier, ": ", err.Error())
 						break
 					}
 
 					mentionSubscribers(session, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, err.Error())
+						log.Print(server.Identifier, ": ", err.Error())
 					}
 
 					lastLoggedAt = chapter.LoggedAt
@@ -136,7 +136,7 @@ func startAnnouncers() error {
 				if announced {
 					err = setLastAnnouncedTime(db, server.Identifier, lastLoggedAt)
 					if err != nil {
-						log.Print(server.Identifier, err.Error())
+						log.Print(server.Identifier, ": ", err.Error())
 					}
 				}
 			} else {
@@ -146,7 +146,7 @@ func startAnnouncers() error {
 			// Clear the "is announcing" flag back to false
 			err = setAnnouncingServerFlag(db, server.Identifier, false)
 			if err != nil {
-				log.Print(server.Identifier, err.Error())
+				log.Print(server.Identifier, ": ", err.Error())
 			}
 
 			log.Print("Announcement process finished for server ", server.Identifier, ".")
