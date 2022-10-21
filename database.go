@@ -311,7 +311,7 @@ func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
 		FROM Chapters
 		WHERE datetime(loggedAt) > datetime(?)
 		AND datetime(date) > datetime(?)
-		ORDER BY datetime(loggedAt) ASC
+		ORDER BY datetime(date) ASC
 	`)
 	if err != nil {
 		return nil, err
