@@ -46,12 +46,16 @@ func mentionSubscribers(session *discordgo.Session, server *server, chapter *cha
 
 	// Send all mention strings in a single message
 	// TODO: Split the message if it's too long?
-	message, err := session.ChannelMessageSend(server.FeedChannelIdentifier, strings.Join(mentions, " "))
-	if err != nil {
-		return nil, err
+	if len(mentions) > 0 {
+		message, err := session.ChannelMessageSend(server.FeedChannelIdentifier, strings.Join(mentions, " "))
+		if err != nil {
+			return nil, err
+		}
+
+		return message, nil
 	}
 
-	return message, nil
+	return nil, nil
 }
 
 // The "mother" announcer process.
