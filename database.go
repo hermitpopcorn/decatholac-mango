@@ -129,7 +129,7 @@ func setFeedChannel(db *sql.DB, guildId string, channelId string) error {
 		if err != nil {
 			return err
 		}
-		_, err := stmt.Exec(guildId, channelId, time.Now().UTC())
+		_, err := stmt.Exec(guildId, channelId, time.Now().Add((time.Hour*24*7)*-1).UTC())
 		if err != nil {
 			return err
 		}
