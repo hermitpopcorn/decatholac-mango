@@ -98,6 +98,7 @@ func startGofer(waiter *sync.WaitGroup, target target) {
 	}
 	if attempts == 0 {
 		log.Print(target.Name, ": ", "Failed all fetching attempts.")
+		waiter.Done()
 		return
 	}
 
@@ -105,6 +106,7 @@ func startGofer(waiter *sync.WaitGroup, target target) {
 	err = saveChapters(db, &chapters)
 	if err != nil {
 		log.Print(target.Name, ": ", "Failed saving chapters: ", err.Error())
+		waiter.Done()
 		return
 	}
 
