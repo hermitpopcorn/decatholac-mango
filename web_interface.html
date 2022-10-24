@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>decatholac MANGO web interface</title>
+</head>
+<body>
+	<button id="fetch">Fetch</button>
+	<button id="announce">Announce</button>
+	<script type="text/javascript">
+		document.getElementById('fetch').addEventListener('click', async () => {
+			let r = await fetch("/fetch");
+			alert(await r.text());
+		});
+		document.getElementById('announce').addEventListener('click', async () => {
+			let r = await fetch("/announce");
+			alert(await r.text());
+		});
+	</script>
+</body>
+</html>
