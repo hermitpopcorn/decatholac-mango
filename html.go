@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
 // Gets the text inside a DOM node.
@@ -37,14 +38,14 @@ func getNodeText(node *goquery.Selection, tag string, attribute string) string {
 }
 
 // Does the entire HTML parsing thing.
-func parseHtml(target *target, htmlString *string) ([]chapter, error) {
+func parseHtml(target *target, htmlString *string) ([]types.Chapter, error) {
 	reader := strings.NewReader(*htmlString)
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	var chapters = make([]chapter, 0)
+	var chapters = make([]types.Chapter, 0)
 
 	// Get the chapters' list container nodes
 	chapterNodes := doc.Find(target.Tags.ChaptersTag)
@@ -54,7 +55,7 @@ func parseHtml(target *target, htmlString *string) ([]chapter, error) {
 
 	// Loop over the chapter nodes.
 	chapterNodes.Each(func(i int, node *goquery.Selection) {
-		var chapter chapter
+		var chapter types.Chapter
 		chapter.Manga = target.Name
 
 		// Get title

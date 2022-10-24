@@ -3,12 +3,14 @@
 package main
 
 import (
-	"database/sql"
 	"io"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/hermitpopcorn/decatholac-mango/database"
+	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
 // To make sure not more than one gofer is running for one target,
@@ -40,9 +42,9 @@ func fetchBody(url string) (string, error) {
 }
 
 // This fetches the source and then parses it according to the specified mode.
-func fetchChapters(target *target) ([]chapter, error) {
+func fetchChapters(target *target) ([]types.Chapter, error) {
 	var body string
-	var chapters []chapter
+	var chapters []types.Chapter
 	var err error
 
 	if target.Mode == "json" {
@@ -80,8 +82,8 @@ func fetchChapters(target *target) ([]chapter, error) {
 // This starts a gofer process.
 // It doesn't return anything because it's supposed to be called in a goroutine.
 // It does take a *sync.WaitGroup as a parameter so it can tell the main process that it's done, though.
-func startGofer(waiter *sync.WaitGroup, db *sql.DB, target target) {
-	var chapters []chapter
+func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
+	var chapters []types.Chapter
 	var err error
 
 	log.Print("Gofer started for ", target.Name)
@@ -104,7 +106,7 @@ func startGofer(waiter *sync.WaitGroup, db *sql.DB, target target) {
 	}
 
 	// Save the chapters to DB
-	err = saveChapters(db, &chapters)
+	err = db.SaveChapters(&chapters)
 	if err != nil {
 		log.Print(target.Name, ": ", "Failed saving chapters: ", err.Error())
 		waiter.Done()
@@ -118,7 +120,7 @@ func startGofer(waiter *sync.WaitGroup, db *sql.DB, target target) {
 
 // This is the "mother" gofer process.
 // It runs one gofer for every target.
-func startGofers(targets *[]target, db *sql.DB) error {
+func startGofers(db database.Database, targets *[]target) error {
 	// Set on progress flag; cancel if it's up
 	if currentlyFetchingTargets {
 		return &PreoccupiedError{}

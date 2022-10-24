@@ -6,7 +6,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"log"
 	"os"
@@ -15,6 +14,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/bwmarrin/discordgo"
+	"github.com/hermitpopcorn/decatholac-mango/database"
+	"github.com/hermitpopcorn/decatholac-mango/types"
 	"github.com/robfig/cron/v3"
 )
 
@@ -58,22 +59,6 @@ type tags struct {
 	UrlAttribute    string
 }
 
-type chapter struct {
-	Manga    string
-	Number   string
-	Title    string
-	Date     time.Time
-	Url      string
-	LoggedAt time.Time
-}
-
-type server struct {
-	Identifier            string
-	FeedChannelIdentifier string
-	LastAnnouncedAt       time.Time
-	IsAnnouncing          bool
-}
-
 // Read configuration file
 var config configuration
 
@@ -91,11 +76,11 @@ func init() {
 }
 
 // Prepare database
-var db *sql.DB
+var db database.Database
 
 func init() {
 	var err error
-	db, err = openDatabase()
+	db, err = database.OpenSQLiteDatabase("database.db")
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -202,7 +187,7 @@ func main() {
 			}
 
 			var err error = nil
-			err = setFeedChannel(db, i.GuildID, i.ChannelID)
+			err = db.SetFeedChannel(i.GuildID, i.ChannelID)
 			if err != nil {
 				log.Print(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when setting the feed channel...")
@@ -216,10 +201,10 @@ func main() {
 			var isAnnouncing bool
 			var err error = nil
 			// Check if the bot is working on announcing the chapters in this guild
-			isAnnouncing, err = getAnnouncingServerFlag(db, i.GuildID)
+			isAnnouncing, err = db.GetAnnouncingServerFlag(i.GuildID)
 			if err != nil {
 				switch err.(type) {
-				case *NoFeedChannelSetError:
+				case *database.NoFeedChannelSetError:
 					sendEphemeralResponse(s, i, "You have to set the feed channel for this server first.")
 					return
 				default:
@@ -235,7 +220,7 @@ func main() {
 			}
 
 			// Set the "is announcing" flag to true
-			err = setAnnouncingServerFlag(db, i.GuildID, true)
+			err = db.SetAnnouncingServerFlag(i.GuildID, true)
 			if err != nil {
 				log.Print(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when setting the server flags...")
@@ -244,32 +229,32 @@ func main() {
 
 			// Get the feed channel ID
 			var channelId string
-			channelId, err = getFeedChannel(db, i.GuildID)
+			channelId, err = db.GetFeedChannel(i.GuildID)
 			if err != nil {
-				var nf *NoFeedChannelSetError
+				var nf *database.NoFeedChannelSetError
 				if errors.As(err, &nf) {
 					sendEphemeralResponse(s, i, "You have to set the feed channel for this server first.")
-					setAnnouncingServerFlag(db, i.GuildID, false)
+					db.SetAnnouncingServerFlag(i.GuildID, false)
 					return
 				}
 				log.Print(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when getting the feed channel...")
-				setAnnouncingServerFlag(db, i.GuildID, false)
+				db.SetAnnouncingServerFlag(i.GuildID, false)
 				return
 			}
 
 			// Fetch all unannounced chapters
-			chapters, err := getUnannouncedChapters(db, i.GuildID)
+			chapters, err := db.GetUnannouncedChapters(i.GuildID)
 			if err != nil {
-				var nf *NoFeedChannelSetError
+				var nf *database.NoFeedChannelSetError
 				if errors.As(err, &nf) {
 					sendEphemeralResponse(s, i, "You have to set the feed channel for this server first.")
-					setAnnouncingServerFlag(db, i.GuildID, false)
+					db.SetAnnouncingServerFlag(i.GuildID, false)
 					return
 				}
 				log.Print(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when fetching the chapters...")
-				setAnnouncingServerFlag(db, i.GuildID, false)
+				db.SetAnnouncingServerFlag(i.GuildID, false)
 				return
 			}
 
@@ -284,7 +269,7 @@ func main() {
 				})
 
 				// Send all the chapters
-				var server = server{
+				var server = types.Server{
 					Identifier:            i.GuildID,
 					FeedChannelIdentifier: channelId,
 				}
@@ -295,12 +280,12 @@ func main() {
 					if err != nil {
 						log.Print(server.Identifier, ": ", err.Error())
 						updateResponse(s, i.Interaction, "Something went wrong when announcing a chapter...")
-						setAnnouncingServerFlag(db, i.GuildID, false)
+						db.SetAnnouncingServerFlag(i.GuildID, false)
 						botched = true
 						break
 					}
 
-					_, err = mentionSubscribers(s, &server, &chapter)
+					_, err = mentionSubscribers(db, s, &server, &chapter)
 					if err != nil {
 						log.Print(server.Identifier, ": ", err.Error())
 					}
@@ -308,7 +293,7 @@ func main() {
 					lastLoggedAt = chapter.LoggedAt
 				}
 
-				err = setLastAnnouncedTime(db, i.GuildID, lastLoggedAt)
+				err = db.SetLastAnnouncedTime(i.GuildID, lastLoggedAt)
 				if err != nil {
 					log.Print(err.Error())
 					sendEphemeralResponse(s, i, "Something went wrong when setting the last announcement timestamp...")
@@ -322,7 +307,7 @@ func main() {
 			}
 
 			// Clear the "is announcing" flag back to false
-			err = setAnnouncingServerFlag(db, i.GuildID, false)
+			err = db.SetAnnouncingServerFlag(i.GuildID, false)
 			if err != nil {
 				log.Print(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when clearing the server flag...")
@@ -337,17 +322,17 @@ func main() {
 				return
 			}
 
-			go startGofers(&config.Targets, db)
+			go startGofers(db, &config.Targets)
 			sendEphemeralResponse(s, i, "Started the fetch process.")
 		},
 
 		// Add a user and a specified manga title to the subscribe list
 		"subscribe": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			title := i.ApplicationCommandData().Options[0].StringValue()
-			err := saveSubscription(db, i.Member.User.ID, i.GuildID, title)
+			err := db.SaveSubscription(i.Member.User.ID, i.GuildID, title)
 			if err != nil {
 				switch err.(type) {
-				case *TitleDoesNotExistError:
+				case *database.TitleDoesNotExistError:
 					sendEphemeralResponse(s, i, "That title does not exist.")
 					return
 				default:
@@ -363,10 +348,10 @@ func main() {
 		// Add a user and a specified manga title to the subscribe list
 		"unsubscribe": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			title := i.ApplicationCommandData().Options[0].StringValue()
-			err := removeSubscription(db, i.Member.User.ID, i.GuildID, title)
+			err := db.RemoveSubscription(i.Member.User.ID, i.GuildID, title)
 			if err != nil {
 				switch err.(type) {
-				case *NoSubscriptionFoundError:
+				case *database.NoSubscriptionFoundError:
 					sendEphemeralResponse(s, i, "You are not subscribed to that title.")
 					return
 				default:
@@ -403,7 +388,7 @@ func main() {
 	cron := cron.New()
 	cron.AddFunc("@every 6h", func() {
 		log.Print("Fetch process triggered by cronjob.")
-		startGofers(&config.Targets, db)
+		startGofers(db, &config.Targets)
 
 		log.Print("Global announcement process triggered by cronjob.")
 		startAnnouncers(db)

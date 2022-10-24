@@ -4,11 +4,11 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.2.0
+	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/bwmarrin/discordgo v0.26.1
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/robfig/cron/v3 v3.0.0
-	github.com/PuerkitoBio/goquery v1.8.0
 )
 
 require (

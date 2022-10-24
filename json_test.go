@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 	"time"
+
+	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
 func TestJsonParser(t *testing.T) {
@@ -38,7 +40,7 @@ func TestJsonParser(t *testing.T) {
 	if err != nil {
 		t.Error("The test itself failed (time parsing)")
 	}
-	firstChapter := chapter{
+	firstChapter := types.Chapter{
 		Manga:  "JSON Test Manga",
 		Number: "Chapter 105",
 		Title:  "Chapter 105 Here comes",
@@ -58,7 +60,7 @@ func TestJsonParser(t *testing.T) {
 	if err != nil {
 		t.Error("The test itself failed (time parsing)")
 	}
-	secondChapter := chapter{
+	secondChapter := types.Chapter{
 		Manga:  "JSON Test Manga",
 		Number: "Chapter 106",
 		Title:  "Chapter 106 Dat Boi",

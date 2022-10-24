@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
+
+	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
-func parseJson(target *target, jsonString *string) ([]chapter, error) {
+func parseJson(target *target, jsonString *string) ([]types.Chapter, error) {
 	// Unpack the entire JSON
 	unmarshalled := make(map[string]any)
 	json.Unmarshal([]byte(*jsonString), &unmarshalled)
@@ -26,8 +28,8 @@ func parseJson(target *target, jsonString *string) ([]chapter, error) {
 	}
 
 	// Collect chapters data into an array
-	collectData := func(chapterJson map[string]any) chapter {
-		chapter := chapter{}
+	collectData := func(chapterJson map[string]any) types.Chapter {
+		chapter := types.Chapter{}
 
 		chapter.Manga = target.Name
 
@@ -67,7 +69,7 @@ func parseJson(target *target, jsonString *string) ([]chapter, error) {
 	}
 
 	// Loop over the JSON
-	chapters := make([]chapter, 0)
+	chapters := make([]types.Chapter, 0)
 	if target.AscendingSource {
 		for i := 0; i < len(chaptersJson); i++ {
 			chapter := collectData(chaptersJson[i].(map[string]any))

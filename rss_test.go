@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 	"time"
+
+	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
 func TestRssParser(t *testing.T) {
@@ -55,7 +57,7 @@ func TestRssParser(t *testing.T) {
 	if err != nil {
 		t.Error("The test itself failed (time parsing)")
 	}
-	firstChapter := chapter{
+	firstChapter := types.Chapter{
 		Manga:  "RSS Test Publishing",
 		Number: "00023",
 		Title:  "Part 23: The Alpha",
@@ -75,7 +77,7 @@ func TestRssParser(t *testing.T) {
 	if err != nil {
 		t.Error("The test itself failed (time parsing)")
 	}
-	secondChapter := chapter{
+	secondChapter := types.Chapter{
 		Manga:  "RSS Test Publishing",
 		Number: "00024",
 		Title:  "Part 24: The Omega",

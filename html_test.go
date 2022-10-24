@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 	"time"
+
+	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
 func TestHtmlParser(t *testing.T) {
@@ -66,7 +68,7 @@ func TestHtmlParser(t *testing.T) {
 	if err != nil {
 		t.Error("The test itself failed (time parsing)")
 	}
-	firstChapter := chapter{
+	firstChapter := types.Chapter{
 		Manga:  "HTML Test Manga",
 		Number: "50",
 		Title:  "Chapter 50",
@@ -86,7 +88,7 @@ func TestHtmlParser(t *testing.T) {
 	if err != nil {
 		t.Error("The test itself failed (time parsing)")
 	}
-	secondChapter := chapter{
+	secondChapter := types.Chapter{
 		Manga:  "HTML Test Manga",
 		Number: "51",
 		Title:  "Chapter 51",

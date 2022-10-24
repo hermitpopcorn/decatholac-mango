@@ -1,7 +1,7 @@
-// The functions in this file handles anything related to the database,
+// The functions in this package handles anything related to the database,
 // be it querying for data or saving them.
 
-package main
+package database
 
 import (
 	"database/sql"
@@ -9,62 +9,55 @@ import (
 	"os"
 	"time"
 
+	"github.com/hermitpopcorn/decatholac-mango/types"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// This error is thrown whenever a guild (Discord server)-related query is requested
-// but it requires the guild to have set a feed channel and it has not done that yet.
-type NoFeedChannelSetError struct{}
-
-func (e *NoFeedChannelSetError) Error() string {
-	return "The feed channel hasn't been set yet."
-}
-
-// This error is thrown whenever a user requests a subscription for a title,
-// but that title does not currently exist in the database.
-type TitleDoesNotExistError struct{}
-
-func (e *TitleDoesNotExistError) Error() string {
-	return "The specified title does not exist in the database yet."
-}
-
-// This error is thrown whenever a user requests removal of their subscription for a title,
-// but that subscription does not exist in the first place.
-type NoSubscriptionFoundError struct{}
-
-func (e *NoSubscriptionFoundError) Error() string {
-	return "The user is not subscribed to such title."
+type SQLiteDatabase struct {
+	connection *sql.DB
 }
 
 // Opens a local SQLite database.
-func openDatabase() (*sql.DB, error) {
-	if _, err := os.Stat("database.db"); err != nil {
-		os.Create("database.db")
+func OpenSQLiteDatabase(file string) (*SQLiteDatabase, error) {
+	var db SQLiteDatabase
+
+	if file == "" {
+		file = "database.db"
 	}
 
-	db, err := sql.Open("sqlite3", "file:database.db")
+	if _, err := os.Stat(file); err != nil {
+		os.Create(file)
+	}
+
+	connection, err := sql.Open("sqlite3", "file:"+file)
 	if err != nil {
-		return db, err
+		return &db, err
 	}
 
-	if err := db.Ping(); err != nil {
-		return db, err
+	if err := connection.Ping(); err != nil {
+		return &db, err
 	}
 
-	if err := initializeDatabase(db); err != nil {
-		return db, err
+	db.connection = connection
+
+	if err := db.InitializeDatabase(); err != nil {
+		return &db, err
 	}
 
-	return db, nil
+	return &db, nil
+}
+
+func (db *SQLiteDatabase) Close() error {
+	return db.connection.Close()
 }
 
 // Initializes the database.
 // This creates the neccessary tables if they don't exist yet.
-func initializeDatabase(db *sql.DB) error {
-	check := db.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Chapters'")
+func (db *SQLiteDatabase) InitializeDatabase() error {
+	check := db.connection.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Chapters'")
 	err := check.Scan()
 	if err == sql.ErrNoRows {
-		_, err := db.Exec(`CREATE TABLE 'Chapters' (
+		_, err := db.connection.Exec(`CREATE TABLE 'Chapters' (
 			'id'		INTEGER,
 			'manga'		VARCHAR(255) NOT NULL,
 			'title'		VARCHAR(255) NOT NULL,
@@ -79,10 +72,10 @@ func initializeDatabase(db *sql.DB) error {
 		}
 	}
 
-	check = db.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Servers'")
+	check = db.connection.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Servers'")
 	err = check.Scan()
 	if err == sql.ErrNoRows {
-		_, err := db.Exec(`CREATE TABLE 'Servers' (
+		_, err := db.connection.Exec(`CREATE TABLE 'Servers' (
 			'id'				INTEGER,
 			'guildId'			VARCHAR(255) NOT NULL,
 			'channelId'			VARCHAR(255),
@@ -95,10 +88,10 @@ func initializeDatabase(db *sql.DB) error {
 		}
 	}
 
-	check = db.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Subscriptions'")
+	check = db.connection.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'Subscriptions'")
 	err = check.Scan()
 	if err == sql.ErrNoRows {
-		_, err := db.Exec(`CREATE TABLE 'Subscriptions' (
+		_, err := db.connection.Exec(`CREATE TABLE 'Subscriptions' (
 			'id'				INTEGER,
 			'guildId'			VARCHAR(255) NOT NULL,
 			'userId'			VARCHAR(255) NOT NULL,
@@ -114,8 +107,8 @@ func initializeDatabase(db *sql.DB) error {
 }
 
 // Pairs a channel ID to a guild ID (sets the channel as the guild's feed channel).
-func setFeedChannel(db *sql.DB, guildId string, channelId string) error {
-	stmt, err := db.Prepare("SELECT channelId FROM Servers WHERE guildId = ?")
+func (db *SQLiteDatabase) SetFeedChannel(guildId string, channelId string) error {
+	stmt, err := db.connection.Prepare("SELECT channelId FROM Servers WHERE guildId = ?")
 	if err != nil {
 		return err
 	}
@@ -125,7 +118,7 @@ func setFeedChannel(db *sql.DB, guildId string, channelId string) error {
 	err = check.Scan(&currentChannelId)
 	if err == sql.ErrNoRows {
 		// Insert new row if none found
-		stmt, err = db.Prepare("INSERT INTO Servers (guildId, channelId, lastAnnouncedAt) VALUES (?, ?, ?)")
+		stmt, err = db.connection.Prepare("INSERT INTO Servers (guildId, channelId, lastAnnouncedAt) VALUES (?, ?, ?)")
 		if err != nil {
 			return err
 		}
@@ -139,7 +132,7 @@ func setFeedChannel(db *sql.DB, guildId string, channelId string) error {
 			return nil
 		}
 
-		stmt, err = db.Prepare("UPDATE Servers SET channelId = ? WHERE guildId = ?")
+		stmt, err = db.connection.Prepare("UPDATE Servers SET channelId = ? WHERE guildId = ?")
 		if err != nil {
 			return err
 		}
@@ -153,8 +146,8 @@ func setFeedChannel(db *sql.DB, guildId string, channelId string) error {
 }
 
 // Gets the guild's feed channel ID.
-func getFeedChannel(db *sql.DB, guildId string) (string, error) {
-	stmt, err := db.Prepare("SELECT channelId FROM Servers WHERE guildId = ?")
+func (db *SQLiteDatabase) GetFeedChannel(guildId string) (string, error) {
+	stmt, err := db.connection.Prepare("SELECT channelId FROM Servers WHERE guildId = ?")
 	if err != nil {
 		return "", err
 	}
@@ -170,8 +163,8 @@ func getFeedChannel(db *sql.DB, guildId string) (string, error) {
 }
 
 // Gets the timestamp of when an announcement happens for a certain guild.
-func getLastAnnouncedTime(db *sql.DB, guildId string) (time.Time, error) {
-	stmt, err := db.Prepare("SELECT lastAnnouncedAt FROM Servers WHERE guildId = ?")
+func (db *SQLiteDatabase) GetLastAnnouncedTime(guildId string) (time.Time, error) {
+	stmt, err := db.connection.Prepare("SELECT lastAnnouncedAt FROM Servers WHERE guildId = ?")
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -187,8 +180,8 @@ func getLastAnnouncedTime(db *sql.DB, guildId string) (time.Time, error) {
 }
 
 // Sets the timestamp of... see above.
-func setLastAnnouncedTime(db *sql.DB, guildId string, lastAnnouncedAt time.Time) error {
-	stmt, err := db.Prepare("UPDATE Servers SET lastAnnouncedAt = ? WHERE guildId = ?")
+func (db *SQLiteDatabase) SetLastAnnouncedTime(guildId string, lastAnnouncedAt time.Time) error {
+	stmt, err := db.connection.Prepare("UPDATE Servers SET lastAnnouncedAt = ? WHERE guildId = ?")
 	if err != nil {
 		return err
 	}
@@ -210,8 +203,8 @@ func setLastAnnouncedTime(db *sql.DB, guildId string, lastAnnouncedAt time.Time)
 }
 
 // Gets the status for the announcing server flag of a certain guild.
-func getAnnouncingServerFlag(db *sql.DB, guildId string) (bool, error) {
-	stmt, err := db.Prepare("SELECT isAnnouncing FROM Servers WHERE guildId = ?")
+func (db *SQLiteDatabase) GetAnnouncingServerFlag(guildId string) (bool, error) {
+	stmt, err := db.connection.Prepare("SELECT isAnnouncing FROM Servers WHERE guildId = ?")
 	if err != nil {
 		return true, err
 	}
@@ -233,8 +226,8 @@ func getAnnouncingServerFlag(db *sql.DB, guildId string) (bool, error) {
 }
 
 // Sets the... see above.
-func setAnnouncingServerFlag(db *sql.DB, guildId string, announcing bool) error {
-	stmt, err := db.Prepare("UPDATE Servers SET isAnnouncing = ? WHERE guildId = ?")
+func (db *SQLiteDatabase) SetAnnouncingServerFlag(guildId string, announcing bool) error {
+	stmt, err := db.connection.Prepare("UPDATE Servers SET isAnnouncing = ? WHERE guildId = ?")
 	if err != nil {
 		return err
 	}
@@ -263,10 +256,10 @@ func setAnnouncingServerFlag(db *sql.DB, guildId string, announcing bool) error 
 }
 
 // Saves an array of chapters to the database.
-func saveChapters(db *sql.DB, chapters *[]chapter) error {
+func (db *SQLiteDatabase) SaveChapters(chapters *[]types.Chapter) error {
 	for _, chapter := range *chapters {
 		// Check if exists; only write if it doesn't
-		stmt, err := db.Prepare("SELECT id FROM Chapters WHERE manga = ? AND title = ? AND number = ?")
+		stmt, err := db.connection.Prepare("SELECT id FROM Chapters WHERE manga = ? AND title = ? AND number = ?")
 		if err != nil {
 			return err
 		}
@@ -277,7 +270,7 @@ func saveChapters(db *sql.DB, chapters *[]chapter) error {
 			log.Print("Saving new chapter... [", chapter.Manga, "]: ", chapter.Title)
 
 			// Insert new row
-			stmt, err = db.Prepare("INSERT INTO Chapters (manga, title, number, url, date, loggedAt) VALUES (?, ?, ?, ?, ?, ?)")
+			stmt, err = db.connection.Prepare("INSERT INTO Chapters (manga, title, number, url, date, loggedAt) VALUES (?, ?, ?, ?, ?, ?)")
 			if err != nil {
 				return err
 			}
@@ -298,15 +291,15 @@ func saveChapters(db *sql.DB, chapters *[]chapter) error {
 // it means the chapter is new and thus needs to be announced...
 // UNLESS that chapter was released BEFORE the guild's last announcement time,
 // which means the chapter is actually old, but was just logged into the database recently.
-func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
-	lastAnnouncedAt, err := getLastAnnouncedTime(db, guildId)
+func (db *SQLiteDatabase) GetUnannouncedChapters(guildId string) (*[]types.Chapter, error) {
+	lastAnnouncedAt, err := db.GetLastAnnouncedTime(guildId)
 	if err != nil {
 		return nil, err
 	}
 
-	var chapters []chapter
+	var chapters []types.Chapter
 
-	stmt, err := db.Prepare(`
+	stmt, err := db.connection.Prepare(`
 		SELECT manga, title, number, url, date, loggedAt
 		FROM Chapters
 		WHERE datetime(loggedAt) > datetime(?)
@@ -333,7 +326,7 @@ func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
 		if err != nil {
 			return nil, err
 		}
-		chapters = append(chapters, chapter{
+		chapters = append(chapters, types.Chapter{
 			Manga:    manga,
 			Title:    title,
 			Number:   number,
@@ -349,10 +342,10 @@ func getUnannouncedChapters(db *sql.DB, guildId string) (*[]chapter, error) {
 // Gets all the guilds saved in the database.
 // Guilds are saved into the database whenever it sets a channel as its feed channel.
 // (see setFeedChannel() function)
-func getServers(db *sql.DB) ([]server, error) {
-	var servers []server
+func (db *SQLiteDatabase) GetServers() ([]types.Server, error) {
+	var servers []types.Server
 
-	rows, err := db.Query("SELECT guildId, channelId, lastAnnouncedAt, isAnnouncing FROM Servers")
+	rows, err := db.connection.Query("SELECT guildId, channelId, lastAnnouncedAt, isAnnouncing FROM Servers")
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +369,7 @@ func getServers(db *sql.DB) ([]server, error) {
 			isAnnouncing = true
 		}
 
-		servers = append(servers, server{
+		servers = append(servers, types.Server{
 			Identifier:            identifier,
 			FeedChannelIdentifier: feedChannelIdentifier,
 			LastAnnouncedAt:       lastAnnouncedAt,
@@ -388,8 +381,8 @@ func getServers(db *sql.DB) ([]server, error) {
 }
 
 // Checks if a manga title exists in the Chapters table.
-func checkMangaExistence(db *sql.DB, title string) (bool, error) {
-	stmt, err := db.Prepare("SELECT manga FROM Chapters WHERE manga = ? LIMIT 1")
+func (db *SQLiteDatabase) CheckMangaExistence(title string) (bool, error) {
+	stmt, err := db.connection.Prepare("SELECT manga FROM Chapters WHERE manga = ? LIMIT 1")
 	if err != nil {
 		return false, err
 	}
@@ -404,8 +397,8 @@ func checkMangaExistence(db *sql.DB, title string) (bool, error) {
 }
 
 // Saves a subscription entry.
-func saveSubscription(db *sql.DB, userId string, guildId string, title string) error {
-	titleExists, err := checkMangaExistence(db, title)
+func (db *SQLiteDatabase) SaveSubscription(userId string, guildId string, title string) error {
+	titleExists, err := db.CheckMangaExistence(title)
 	if err != nil {
 		return err
 	}
@@ -414,7 +407,7 @@ func saveSubscription(db *sql.DB, userId string, guildId string, title string) e
 		return &TitleDoesNotExistError{}
 	}
 
-	stmt, err := db.Prepare("SELECT id FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
+	stmt, err := db.connection.Prepare("SELECT id FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
 	if err != nil {
 		return err
 	}
@@ -423,7 +416,7 @@ func saveSubscription(db *sql.DB, userId string, guildId string, title string) e
 	err = subscriptionExists.Scan()
 	if err == sql.ErrNoRows {
 		// Insert new row if none found
-		stmt, err = db.Prepare("INSERT INTO Subscriptions (userId, guildId, title) VALUES (?, ?, ?)")
+		stmt, err = db.connection.Prepare("INSERT INTO Subscriptions (userId, guildId, title) VALUES (?, ?, ?)")
 		if err != nil {
 			return err
 		}
@@ -437,8 +430,8 @@ func saveSubscription(db *sql.DB, userId string, guildId string, title string) e
 }
 
 // Removes a subscription entry.
-func removeSubscription(db *sql.DB, userId string, guildId string, title string) error {
-	stmt, err := db.Prepare("SELECT id FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
+func (db *SQLiteDatabase) RemoveSubscription(userId string, guildId string, title string) error {
+	stmt, err := db.connection.Prepare("SELECT id FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
 	if err != nil {
 		return err
 	}
@@ -447,7 +440,7 @@ func removeSubscription(db *sql.DB, userId string, guildId string, title string)
 	err = subscriptionExists.Scan()
 	if err != sql.ErrNoRows {
 		// Remove if found
-		stmt, err = db.Prepare("DELETE FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
+		stmt, err = db.connection.Prepare("DELETE FROM Subscriptions WHERE userId = ? AND guildId = ? AND title = ?")
 		if err != nil {
 			return err
 		}
@@ -463,10 +456,10 @@ func removeSubscription(db *sql.DB, userId string, guildId string, title string)
 }
 
 // Get the list of user IDs that are subscribed to a certain title in a certain guild.
-func getSubscribers(db *sql.DB, guildId string, title string) ([]string, error) {
+func (db *SQLiteDatabase) GetSubscribers(guildId string, title string) ([]string, error) {
 	var userIds []string
 
-	stmt, err := db.Prepare("SELECT userId FROM Subscriptions WHERE guildId = ? AND title = ?")
+	stmt, err := db.connection.Prepare("SELECT userId FROM Subscriptions WHERE guildId = ? AND title = ?")
 	if err != nil {
 		return nil, err
 	}

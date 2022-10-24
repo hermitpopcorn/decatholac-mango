@@ -3,17 +3,18 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/hermitpopcorn/decatholac-mango/database"
+	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
 // Announce a single chapter to a certain guild's feed channel.
-func announceChapter(session *discordgo.Session, server *server, chapter *chapter) (*discordgo.Message, error) {
+func announceChapter(session *discordgo.Session, server *types.Server, chapter *types.Chapter) (*discordgo.Message, error) {
 	message, err := session.ChannelMessageSendEmbed(server.FeedChannelIdentifier, &discordgo.MessageEmbed{
 		Type:      discordgo.EmbedTypeLink,
 		URL:       chapter.Url,
@@ -28,8 +29,8 @@ func announceChapter(session *discordgo.Session, server *server, chapter *chapte
 }
 
 // Mention subscribers for announced chapter.
-func mentionSubscribers(session *discordgo.Session, server *server, chapter *chapter) (*discordgo.Message, error) {
-	userIds, err := getSubscribers(db, server.Identifier, chapter.Manga)
+func mentionSubscribers(db database.Database, session *discordgo.Session, server *types.Server, chapter *types.Chapter) (*discordgo.Message, error) {
+	userIds, err := db.GetSubscribers(server.Identifier, chapter.Manga)
 	if err != nil {
 		return nil, err
 	}
@@ -63,9 +64,9 @@ func mentionSubscribers(session *discordgo.Session, server *server, chapter *cha
 // This gets the list of all registered guilds and their unannounced chapters.
 // If found, it sends the new chapters to the guilds' feed channels,
 // and then logs the last announcement time of each guild.
-func startAnnouncers(db *sql.DB) error {
+func startAnnouncers(db database.Database) error {
 	// Get the list of servers
-	servers, err := getServers(db)
+	servers, err := db.GetServers()
 	if err != nil {
 		return err
 	}
@@ -76,13 +77,13 @@ func startAnnouncers(db *sql.DB) error {
 		waiter.Add(1)
 
 		// Run a parallel process for each server
-		go func(server server) {
+		go func(server types.Server) {
 			log.Print("Starting announcement process for server ", server.Identifier, ".")
 
 			var err error = nil
 			// Check if the bot is working on announcing the chapters in this server
 			var isAnnouncing bool
-			isAnnouncing, err = getAnnouncingServerFlag(db, server.Identifier)
+			isAnnouncing, err = db.GetAnnouncingServerFlag(server.Identifier)
 			if err != nil {
 				log.Print(server.Identifier, ": ", err.Error())
 				waiter.Done()
@@ -96,7 +97,7 @@ func startAnnouncers(db *sql.DB) error {
 			}
 
 			// Set the "is announcing" flag to true
-			err = setAnnouncingServerFlag(db, server.Identifier, true)
+			err = db.SetAnnouncingServerFlag(server.Identifier, true)
 			if err != nil {
 				log.Print(server.Identifier, ": ", err.Error())
 				waiter.Done()
@@ -104,10 +105,10 @@ func startAnnouncers(db *sql.DB) error {
 			}
 
 			// Fetch all unannounced chapters
-			chapters, err := getUnannouncedChapters(db, server.Identifier)
+			chapters, err := db.GetUnannouncedChapters(server.Identifier)
 			if err != nil {
 				log.Print(server.Identifier, ": ", err.Error())
-				setAnnouncingServerFlag(db, server.Identifier, false)
+				db.SetAnnouncingServerFlag(server.Identifier, false)
 				waiter.Done()
 				return
 			}
@@ -125,7 +126,7 @@ func startAnnouncers(db *sql.DB) error {
 						break
 					}
 
-					mentionSubscribers(session, &server, &chapter)
+					mentionSubscribers(db, session, &server, &chapter)
 					if err != nil {
 						log.Print(server.Identifier, ": ", err.Error())
 					}
@@ -135,7 +136,7 @@ func startAnnouncers(db *sql.DB) error {
 				}
 
 				if announced {
-					err = setLastAnnouncedTime(db, server.Identifier, lastLoggedAt)
+					err = db.SetLastAnnouncedTime(server.Identifier, lastLoggedAt)
 					if err != nil {
 						log.Print(server.Identifier, ": ", err.Error())
 					}
@@ -145,7 +146,7 @@ func startAnnouncers(db *sql.DB) error {
 			}
 
 			// Clear the "is announcing" flag back to false
-			err = setAnnouncingServerFlag(db, server.Identifier, false)
+			err = db.SetAnnouncingServerFlag(server.Identifier, false)
 			if err != nil {
 				log.Print(server.Identifier, ": ", err.Error())
 			}
