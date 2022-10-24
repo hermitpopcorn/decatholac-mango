@@ -3,6 +3,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"strings"
 	"sync"
@@ -62,7 +63,7 @@ func mentionSubscribers(session *discordgo.Session, server *server, chapter *cha
 // This gets the list of all registered guilds and their unannounced chapters.
 // If found, it sends the new chapters to the guilds' feed channels,
 // and then logs the last announcement time of each guild.
-func startAnnouncers() error {
+func startAnnouncers(db *sql.DB) error {
 	// Get the list of servers
 	servers, err := getServers(db)
 	if err != nil {

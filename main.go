@@ -20,7 +20,7 @@ import (
 
 type configuration struct {
 	Token   string
-	Targets map[string]target
+	Targets []target
 }
 
 type target struct {
@@ -337,7 +337,7 @@ func main() {
 				return
 			}
 
-			go startGofers()
+			go startGofers(&config.Targets, db)
 			sendEphemeralResponse(s, i, "Started the fetch process.")
 		},
 
@@ -403,10 +403,10 @@ func main() {
 	cron := cron.New()
 	cron.AddFunc("@every 6h", func() {
 		log.Print("Fetch process triggered by cronjob.")
-		startGofers()
+		startGofers(&config.Targets, db)
 
 		log.Print("Global announcement process triggered by cronjob.")
-		startAnnouncers()
+		startAnnouncers(db)
 	})
 	cron.Start()
 

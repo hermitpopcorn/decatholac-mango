@@ -3,6 +3,7 @@
 package main
 
 import (
+	"database/sql"
 	"io"
 	"log"
 	"net/http"
@@ -79,7 +80,7 @@ func fetchChapters(target *target) ([]chapter, error) {
 // This starts a gofer process.
 // It doesn't return anything because it's supposed to be called in a goroutine.
 // It does take a *sync.WaitGroup as a parameter so it can tell the main process that it's done, though.
-func startGofer(waiter *sync.WaitGroup, target target) {
+func startGofer(waiter *sync.WaitGroup, db *sql.DB, target target) {
 	var chapters []chapter
 	var err error
 
@@ -117,7 +118,7 @@ func startGofer(waiter *sync.WaitGroup, target target) {
 
 // This is the "mother" gofer process.
 // It runs one gofer for every target.
-func startGofers() error {
+func startGofers(targets *[]target, db *sql.DB) error {
 	// Set on progress flag; cancel if it's up
 	if currentlyFetchingTargets {
 		return &PreoccupiedError{}
@@ -126,11 +127,11 @@ func startGofers() error {
 
 	// Iterate through targets
 	var waiter sync.WaitGroup
-	for _, target := range config.Targets {
+	for _, target := range *targets {
 		waiter.Add(1)
 
 		// Send gofer to work in a parallel process
-		go startGofer(&waiter, target)
+		go startGofer(&waiter, db, target)
 	}
 
 	waiter.Wait()
