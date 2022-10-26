@@ -93,7 +93,8 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 	for attempts = 5; attempts > 0; attempts-- {
 		chapters, err = fetchChapters(&target)
 		if err != nil {
-			log.Print(target.Name, ": ", "Failed fetching: ", err.Error(), "| Remaining attempt(s):", attempts)
+			log.Print(target.Name, ": ", "Failed fetching: ", err.Error(), "| Remaining attempt(s): ", attempts)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 
