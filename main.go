@@ -69,7 +69,7 @@ func init() {
 	configFile := "config.toml"
 
 	if _, err := os.Stat(configFile); err != nil {
-		log.Panicln("Config file not found.")
+		log.Panicln("Config file not found")
 	}
 
 	_, err := toml.DecodeFile(configFile, &config)
@@ -388,15 +388,18 @@ func main() {
 	defer session.Close()
 
 	// Setup cron
-	cron := cron.New()
-	cron.AddFunc("@every 6h", func() {
-		log.Print("Fetch process triggered by cronjob.")
+	job := func() {
+		log.Print("Fetch process triggered by cronjob")
 		startGofers(db, &config.Targets)
 
-		log.Print("Global announcement process triggered by cronjob.")
+		log.Print("Global announcement process triggered by cronjob")
 		startAnnouncers(db)
-	})
+	}
+	cron := cron.New()
+	cron.AddFunc("@every 6h", job)
 	cron.Start()
+	// Start once immediately on startup
+	go job()
 
 	// Setup web interface
 	go func() {

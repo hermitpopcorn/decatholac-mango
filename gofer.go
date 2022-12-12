@@ -23,7 +23,7 @@ var currentlyFetchingTargets = false
 type PreoccupiedError struct{}
 
 func (e *PreoccupiedError) Error() string {
-	return "The gofer is not done fetching yet."
+	return "The gofer is not done fetching yet"
 }
 
 // This turns a source URL into a string containing the response body.
@@ -93,7 +93,7 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 	for attempts = 5; attempts > 0; attempts-- {
 		chapters, err = fetchChapters(&target)
 		if err != nil {
-			log.Print(target.Name, ": ", "Failed fetching: ", err.Error(), "| Remaining attempt(s): ", attempts)
+			log.Print(target.Name, ": ", "Failed fetching: ", err.Error(), " | Remaining attempt(s): ", attempts)
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -101,7 +101,7 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 		break
 	}
 	if attempts == 0 {
-		log.Print(target.Name, ": ", "Failed all fetching attempts.")
+		log.Print(target.Name, ": ", "Failed all fetching attempts")
 		waiter.Done()
 		return
 	}
@@ -114,7 +114,7 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 		return
 	}
 
-	log.Print(target.Name, ": ", "Gofer finished.")
+	log.Print(target.Name, ": ", "Gofer finished")
 
 	waiter.Done()
 }
@@ -144,6 +144,6 @@ func startGofers(db database.Database, targets *[]target) error {
 
 	// Take down flag and return
 	currentlyFetchingTargets = false
-	log.Print("Fetch process finished.")
+	log.Print("Fetch process finished")
 	return nil
 }

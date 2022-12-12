@@ -78,7 +78,7 @@ func startAnnouncers(db database.Database) error {
 
 		// Run a parallel process for each server
 		go func(server types.Server) {
-			log.Print("Starting announcement process for server ", server.Identifier, ".")
+			log.Print("Starting announcement process for server ", server.Identifier)
 
 			var err error = nil
 			// Check if the bot is working on announcing the chapters in this server
@@ -142,7 +142,7 @@ func startAnnouncers(db database.Database) error {
 					}
 				}
 			} else {
-				log.Print("No new chapters for server ", server.Identifier, ".")
+				log.Print("No new chapters for server ", server.Identifier)
 			}
 
 			// Clear the "is announcing" flag back to false
@@ -151,13 +151,13 @@ func startAnnouncers(db database.Database) error {
 				log.Print(server.Identifier, ": ", err.Error())
 			}
 
-			log.Print("Announcement process finished for server ", server.Identifier, ".")
+			log.Print("Announcement process finished for server ", server.Identifier)
 			waiter.Done()
 		}(s)
 	}
 
 	waiter.Wait()
 
-	log.Print("Global announcement process finished.")
+	log.Print("Global announcement process finished")
 	return nil
 }
