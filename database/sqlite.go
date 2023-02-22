@@ -263,6 +263,7 @@ func (db *SQLiteDatabase) SaveChapters(chapters *[]types.Chapter) error {
 		if err != nil {
 			return err
 		}
+		defer stmt.Close()
 
 		check := stmt.QueryRow(chapter.Manga, chapter.Title, chapter.Number)
 		err = check.Scan()
@@ -274,6 +275,7 @@ func (db *SQLiteDatabase) SaveChapters(chapters *[]types.Chapter) error {
 			if err != nil {
 				return err
 			}
+			defer stmt.Close()
 			_, err := stmt.Exec(chapter.Manga, chapter.Title, chapter.Number, chapter.Url, chapter.Date.UTC(), time.Now().UTC())
 			if err != nil {
 				return err
@@ -302,9 +304,9 @@ func (db *SQLiteDatabase) GetUnannouncedChapters(guildId string) (*[]types.Chapt
 	stmt, err := db.connection.Prepare(`
 		SELECT manga, title, number, url, date, loggedAt
 		FROM Chapters
-		WHERE datetime(loggedAt) > datetime(?)
-		AND datetime(date) > datetime(?)
-		ORDER BY datetime(date) ASC
+		WHERE loggedAt > ?
+		AND date > ?
+		ORDER BY date ASC
 	`)
 	if err != nil {
 		return nil, err
