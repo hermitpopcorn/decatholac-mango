@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hermitpopcorn/decatholac-mango/types"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type SQLiteDatabase struct {
@@ -29,7 +29,7 @@ func OpenSQLiteDatabase(file string) (*SQLiteDatabase, error) {
 		os.Create(file)
 	}
 
-	connection, err := sql.Open("sqlite3", "file:"+file)
+	connection, err := sql.Open("sqlite", "file:"+file)
 	if err != nil {
 		return &db, err
 	}

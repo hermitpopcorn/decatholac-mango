@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/hermitpopcorn/decatholac-mango/types"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // This error is thrown whenever a guild (Discord server)-related query is requested
