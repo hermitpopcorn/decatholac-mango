@@ -113,6 +113,7 @@ func (db *SQLiteDatabase) SetFeedChannel(guildId string, channelId string) error
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	check := stmt.QueryRow(guildId)
 	var currentChannelId string
@@ -123,6 +124,8 @@ func (db *SQLiteDatabase) SetFeedChannel(guildId string, channelId string) error
 		if err != nil {
 			return err
 		}
+		defer stmt.Close()
+
 		_, err := stmt.Exec(guildId, channelId, time.Now().Add((time.Hour*24*7)*-1).UTC())
 		if err != nil {
 			return err
@@ -137,6 +140,8 @@ func (db *SQLiteDatabase) SetFeedChannel(guildId string, channelId string) error
 		if err != nil {
 			return err
 		}
+		defer stmt.Close()
+
 		_, err := stmt.Exec(channelId, guildId)
 		if err != nil {
 			return err
@@ -152,6 +157,7 @@ func (db *SQLiteDatabase) GetFeedChannel(guildId string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer stmt.Close()
 
 	check := stmt.QueryRow(guildId)
 	var currentChannelId string
@@ -169,6 +175,7 @@ func (db *SQLiteDatabase) GetLastAnnouncedTime(guildId string) (time.Time, error
 	if err != nil {
 		return time.Time{}, err
 	}
+	defer stmt.Close()
 
 	check := stmt.QueryRow(guildId)
 	var lastAnnouncedAt time.Time
@@ -186,6 +193,7 @@ func (db *SQLiteDatabase) SetLastAnnouncedTime(guildId string, lastAnnouncedAt t
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	exec, err := stmt.Exec(lastAnnouncedAt.UTC(), guildId)
 	if err != nil {
@@ -209,6 +217,7 @@ func (db *SQLiteDatabase) GetAnnouncingServerFlag(guildId string) (bool, error) 
 	if err != nil {
 		return true, err
 	}
+	defer stmt.Close()
 
 	check := stmt.QueryRow(guildId)
 	var isAnnouncing int
@@ -232,6 +241,7 @@ func (db *SQLiteDatabase) SetAnnouncingServerFlag(guildId string, announcing boo
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	var boolint int
 	if announcing {
@@ -277,6 +287,7 @@ func (db *SQLiteDatabase) SaveChapters(chapters *[]types.Chapter) error {
 				return err
 			}
 			defer stmt.Close()
+
 			_, err := stmt.Exec(chapter.Manga, chapter.Title, chapter.Number, chapter.Url, chapter.Date.UTC(), time.Now().UTC())
 			if err != nil {
 				return err
@@ -312,6 +323,7 @@ func (db *SQLiteDatabase) GetUnannouncedChapters(guildId string) (*[]types.Chapt
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err := stmt.Query(lastAnnouncedAt, lastAnnouncedAt)
 	if err != nil {
@@ -389,6 +401,7 @@ func (db *SQLiteDatabase) CheckMangaExistence(title string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer stmt.Close()
 
 	check := stmt.QueryRow(title)
 	err = check.Scan()
@@ -414,6 +427,7 @@ func (db *SQLiteDatabase) SaveSubscription(userId string, guildId string, title 
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	subscriptionExists := stmt.QueryRow(userId, guildId, title)
 	err = subscriptionExists.Scan()
@@ -423,6 +437,8 @@ func (db *SQLiteDatabase) SaveSubscription(userId string, guildId string, title 
 		if err != nil {
 			return err
 		}
+		defer stmt.Close()
+
 		_, err := stmt.Exec(userId, guildId, title)
 		if err != nil {
 			return err
@@ -438,6 +454,7 @@ func (db *SQLiteDatabase) RemoveSubscription(userId string, guildId string, titl
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	subscriptionExists := stmt.QueryRow(userId, guildId, title)
 	err = subscriptionExists.Scan()
@@ -447,6 +464,8 @@ func (db *SQLiteDatabase) RemoveSubscription(userId string, guildId string, titl
 		if err != nil {
 			return err
 		}
+		defer stmt.Close()
+
 		_, err := stmt.Exec(userId, guildId, title)
 		if err != nil {
 			return err
@@ -466,6 +485,7 @@ func (db *SQLiteDatabase) GetSubscribers(guildId string, title string) ([]string
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err := stmt.Query(guildId, title)
 	if err != nil {
