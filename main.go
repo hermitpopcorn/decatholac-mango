@@ -25,6 +25,8 @@ type configuration struct {
 	Targets []target
 
 	WebInterfacePort string
+
+	CronInterval string
 }
 
 type target struct {
@@ -396,10 +398,11 @@ func main() {
 		startAnnouncers(db)
 	}
 	cron := cron.New()
-	cron.AddFunc("@every 6h", job)
+	cron.AddFunc(config.CronInterval, job)
 	cron.Start()
 	// Start once immediately on startup
 	go job()
+	log.Println("Running cron " + config.CronInterval)
 
 	// Setup web interface
 	go func() {

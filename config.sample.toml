@@ -1,5 +1,6 @@
 token = "" # Discord bot token
 webInterfacePort = "8090"
+cronInterval = "@every 24h"
 
 [[targets]]
 name = "Bokuyaba"
