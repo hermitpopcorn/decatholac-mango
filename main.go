@@ -7,6 +7,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/bwmarrin/discordgo"
 	"github.com/hermitpopcorn/decatholac-mango/database"
+	"github.com/hermitpopcorn/decatholac-mango/helpers"
 	"github.com/hermitpopcorn/decatholac-mango/types"
 	"github.com/robfig/cron/v3"
 )
@@ -194,7 +196,7 @@ func main() {
 			var err error = nil
 			err = db.SetFeedChannel(i.GuildID, i.ChannelID)
 			if err != nil {
-				log.Print(err.Error())
+				log.Println(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when setting the feed channel...")
 				return
 			}
@@ -213,7 +215,7 @@ func main() {
 					sendEphemeralResponse(s, i, "You have to set the feed channel for this server first.")
 					return
 				default:
-					log.Print(err.Error())
+					log.Println(err.Error())
 					sendEphemeralResponse(s, i, "Something went wrong when checking the server flags...")
 					return
 				}
@@ -227,7 +229,7 @@ func main() {
 			// Set the "is announcing" flag to true
 			err = db.SetAnnouncingServerFlag(i.GuildID, true)
 			if err != nil {
-				log.Print(err.Error())
+				log.Println(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when setting the server flags...")
 				return
 			}
@@ -242,7 +244,7 @@ func main() {
 					db.SetAnnouncingServerFlag(i.GuildID, false)
 					return
 				}
-				log.Print(err.Error())
+				log.Println(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when getting the feed channel...")
 				db.SetAnnouncingServerFlag(i.GuildID, false)
 				return
@@ -257,7 +259,7 @@ func main() {
 					db.SetAnnouncingServerFlag(i.GuildID, false)
 					return
 				}
-				log.Print(err.Error())
+				log.Println(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when fetching the chapters...")
 				db.SetAnnouncingServerFlag(i.GuildID, false)
 				return
@@ -283,7 +285,7 @@ func main() {
 				for _, chapter := range *chapters {
 					_, err = announceChapter(s, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, ": ", err.Error())
+						log.Println(server.Identifier+":", err.Error())
 						updateResponse(s, i.Interaction, "Something went wrong when announcing a chapter...")
 						db.SetAnnouncingServerFlag(i.GuildID, false)
 						botched = true
@@ -292,7 +294,7 @@ func main() {
 
 					_, err = mentionSubscribers(db, s, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, ": ", err.Error())
+						log.Println(server.Identifier+":", err.Error())
 					}
 
 					lastLoggedAt = chapter.LoggedAt
@@ -300,7 +302,7 @@ func main() {
 
 				err = db.SetLastAnnouncedTime(i.GuildID, lastLoggedAt)
 				if err != nil {
-					log.Print(err.Error())
+					log.Println(err.Error())
 					sendEphemeralResponse(s, i, "Something went wrong when setting the last announcement timestamp...")
 				}
 
@@ -314,7 +316,7 @@ func main() {
 			// Clear the "is announcing" flag back to false
 			err = db.SetAnnouncingServerFlag(i.GuildID, false)
 			if err != nil {
-				log.Print(err.Error())
+				log.Println(err.Error())
 				sendEphemeralResponse(s, i, "Something went wrong when clearing the server flag...")
 				return
 			}
@@ -341,7 +343,7 @@ func main() {
 					sendEphemeralResponse(s, i, "That title does not exist.")
 					return
 				default:
-					log.Print(err.Error())
+					log.Println(err.Error())
 					sendEphemeralResponse(s, i, "Something went wrong when trying to subscribe you...")
 					return
 				}
@@ -360,7 +362,7 @@ func main() {
 					sendEphemeralResponse(s, i, "You are not subscribed to that title.")
 					return
 				default:
-					log.Print(err.Error())
+					log.Println(err.Error())
 					sendEphemeralResponse(s, i, "Something went wrong when trying to subscribe you...")
 					return
 				}
@@ -391,10 +393,10 @@ func main() {
 
 	// Setup cron
 	job := func() {
-		log.Print("Fetch process triggered by cronjob")
+		fmt.Println(helpers.FormattedNow(), "Fetch process triggered by cronjob")
 		startGofers(db, &config.Targets)
 
-		log.Print("Global announcement process triggered by cronjob")
+		fmt.Println(helpers.FormattedNow(), "Global announcement process triggered by cronjob")
 		startAnnouncers(db)
 	}
 	cron := cron.New()
@@ -402,7 +404,7 @@ func main() {
 	cron.Start()
 	// Start once immediately on startup
 	go job()
-	log.Println("Running cron " + config.CronInterval)
+	fmt.Println(helpers.FormattedNow(), "Running cron", config.CronInterval)
 
 	// Setup web interface
 	go func() {
@@ -445,10 +447,10 @@ func main() {
 	// Exit on Ctrl+C
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	log.Print("Press Ctrl+C to exit")
+	fmt.Println(helpers.FormattedNow(), "Press Ctrl+C to exit")
 	<-stop
 
-	log.Println("Goodbye...")
+	fmt.Println(helpers.FormattedNow(), "Goodbye...")
 
 	// Remove commands
 	for _, v := range registeredCommands {

@@ -3,13 +3,14 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/hermitpopcorn/decatholac-mango/database"
+	"github.com/hermitpopcorn/decatholac-mango/helpers"
 	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
@@ -78,14 +79,14 @@ func startAnnouncers(db database.Database) error {
 
 		// Run a parallel process for each server
 		go func(server types.Server) {
-			log.Print("Starting announcement process for server ", server.Identifier)
+			fmt.Println(helpers.FormattedNow(), "Starting announcement process for server", server.Identifier)
 
 			var err error = nil
 			// Check if the bot is working on announcing the chapters in this server
 			var isAnnouncing bool
 			isAnnouncing, err = db.GetAnnouncingServerFlag(server.Identifier)
 			if err != nil {
-				log.Print(server.Identifier, ": ", err.Error())
+				fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 				waiter.Done()
 				return
 			}
@@ -99,7 +100,7 @@ func startAnnouncers(db database.Database) error {
 			// Set the "is announcing" flag to true
 			err = db.SetAnnouncingServerFlag(server.Identifier, true)
 			if err != nil {
-				log.Print(server.Identifier, ": ", err.Error())
+				fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 				waiter.Done()
 				return
 			}
@@ -107,7 +108,7 @@ func startAnnouncers(db database.Database) error {
 			// Fetch all unannounced chapters
 			chapters, err := db.GetUnannouncedChapters(server.Identifier)
 			if err != nil {
-				log.Print(server.Identifier, ": ", err.Error())
+				fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 				db.SetAnnouncingServerFlag(server.Identifier, false)
 				waiter.Done()
 				return
@@ -115,20 +116,20 @@ func startAnnouncers(db database.Database) error {
 
 			if len(*chapters) > 0 {
 				// Send all the chapters
-				log.Print("Announcing new chapters for server ", server.Identifier, "...")
+				fmt.Println(helpers.FormattedNow(), "Announcing new chapters for server", server.Identifier, "...")
 				announced := false
 				var lastLoggedAt time.Time
 				// Loop for each chapter
 				for _, chapter := range *chapters {
 					_, err = announceChapter(session, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, ": ", err.Error())
+						fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 						break
 					}
 
 					mentionSubscribers(db, session, &server, &chapter)
 					if err != nil {
-						log.Print(server.Identifier, ": ", err.Error())
+						fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 					}
 
 					lastLoggedAt = chapter.LoggedAt
@@ -138,26 +139,26 @@ func startAnnouncers(db database.Database) error {
 				if announced {
 					err = db.SetLastAnnouncedTime(server.Identifier, lastLoggedAt)
 					if err != nil {
-						log.Print(server.Identifier, ": ", err.Error())
+						fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 					}
 				}
 			} else {
-				log.Print("No new chapters for server ", server.Identifier)
+				fmt.Println(helpers.FormattedNow(), "No new chapters for server", server.Identifier)
 			}
 
 			// Clear the "is announcing" flag back to false
 			err = db.SetAnnouncingServerFlag(server.Identifier, false)
 			if err != nil {
-				log.Print(server.Identifier, ": ", err.Error())
+				fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 			}
 
-			log.Print("Announcement process finished for server ", server.Identifier)
+			fmt.Println(helpers.FormattedNow(), "Announcement process finished for server", server.Identifier)
 			waiter.Done()
 		}(s)
 	}
 
 	waiter.Wait()
 
-	log.Print("Global announcement process finished")
+	fmt.Println(helpers.FormattedNow(), "Global announcement process finished")
 	return nil
 }

@@ -5,10 +5,11 @@ package database
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/hermitpopcorn/decatholac-mango/helpers"
 	"github.com/hermitpopcorn/decatholac-mango/types"
 	_ "modernc.org/sqlite"
 )
@@ -268,7 +269,7 @@ func (db *SQLiteDatabase) SaveChapters(chapters *[]types.Chapter) error {
 		check := stmt.QueryRow(chapter.Manga, chapter.Title, chapter.Number)
 		err = check.Scan()
 		if err == sql.ErrNoRows {
-			log.Print("Saving new chapter... [", chapter.Manga, "]: ", chapter.Title)
+			fmt.Println(helpers.FormattedNow(), "Saving new chapter... ["+chapter.Manga+"]:", chapter.Title)
 
 			// Insert new row
 			stmt, err = db.connection.Prepare("INSERT INTO Chapters (manga, title, number, url, date, loggedAt) VALUES (?, ?, ?, ?, ?, ?)")

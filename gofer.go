@@ -3,13 +3,14 @@
 package main
 
 import (
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/hermitpopcorn/decatholac-mango/database"
+	"github.com/hermitpopcorn/decatholac-mango/helpers"
 	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
@@ -86,14 +87,14 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 	var chapters []types.Chapter
 	var err error
 
-	log.Print("Gofer started for ", target.Name)
+	fmt.Println(helpers.FormattedNow(), "Gofer started for", target.Name)
 
 	// Try fetching the source five times
 	var attempts uint = 5
 	for attempts = 5; attempts > 0; attempts-- {
 		chapters, err = fetchChapters(&target)
 		if err != nil {
-			log.Print(target.Name, ": ", "Failed fetching: ", err.Error(), " | Remaining attempt(s): ", attempts)
+			fmt.Println(helpers.FormattedNow(), target.Name+":", "Failed fetching:", err.Error(), "| Remaining attempt(s):", attempts)
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -101,7 +102,7 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 		break
 	}
 	if attempts == 0 {
-		log.Print(target.Name, ": ", "Failed all fetching attempts")
+		fmt.Println(helpers.FormattedNow(), target.Name+":", "Failed all fetching attempts")
 		waiter.Done()
 		return
 	}
@@ -109,12 +110,12 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 	// Save the chapters to DB
 	err = db.SaveChapters(&chapters)
 	if err != nil {
-		log.Print(target.Name, ": ", "Failed saving chapters: ", err.Error())
+		fmt.Println(helpers.FormattedNow(), target.Name+":", "Failed saving chapters:", err.Error())
 		waiter.Done()
 		return
 	}
 
-	log.Print(target.Name, ": ", "Gofer finished")
+	fmt.Println(helpers.FormattedNow(), target.Name+":", "Gofer finished")
 
 	waiter.Done()
 }
@@ -144,6 +145,6 @@ func startGofers(db database.Database, targets *[]target) error {
 
 	// Take down flag and return
 	currentlyFetchingTargets = false
-	log.Print("Fetch process finished")
+	fmt.Println(helpers.FormattedNow(), "Fetch process finished")
 	return nil
 }
