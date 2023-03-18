@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -108,14 +109,28 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 	}
 
 	// Save the chapters to DB
-	err = db.SaveChapters(&chapters)
-	if err != nil {
-		fmt.Println(helpers.FormattedNow(), target.Name+":", "Failed saving chapters:", err.Error())
-		waiter.Done()
-		return
+	var retry = 10
+	var saved = false
+	for retry > 0 {
+		err = db.SaveChapters(&chapters)
+		if err == nil {
+			retry = 0
+			saved = true
+		} else {
+			if strings.HasPrefix(err.Error(), "database is locked") {
+				fmt.Println(helpers.FormattedNow(), target.Name+":", "Thread busy. Retrying...")
+				retry -= 1
+			} else {
+				retry = 0
+			}
+		}
 	}
 
-	fmt.Println(helpers.FormattedNow(), target.Name+":", "Gofer finished")
+	if saved {
+		fmt.Println(helpers.FormattedNow(), target.Name+":", "Gofer finished")
+	} else {
+		fmt.Println(helpers.FormattedNow(), target.Name+":", "Failed saving chapters:", err.Error())
+	}
 
 	waiter.Done()
 }
