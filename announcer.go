@@ -126,6 +126,7 @@ func startAnnouncers(db database.Database) error {
 						fmt.Println(helpers.FormattedNow(), server.Identifier+":", err.Error())
 						break
 					}
+					fmt.Println(helpers.FormattedNow(), "Chapter ["+chapter.Manga+"]:", chapter.Title, "announced for server", server.Identifier, "...")
 
 					mentionSubscribers(db, session, &server, &chapter)
 					if err != nil {
