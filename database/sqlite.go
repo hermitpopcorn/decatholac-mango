@@ -45,6 +45,10 @@ func OpenSQLiteDatabase(file string) (*SQLiteDatabase, error) {
 		return &db, err
 	}
 
+	// Prevent lock-up by "wrapping mutex around every DB access"
+	// https://github.com/mattn/go-sqlite3/issues/274#issuecomment-191597862
+	db.connection.SetMaxOpenConns(1)
+
 	return &db, nil
 }
 
