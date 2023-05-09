@@ -4,6 +4,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -63,7 +65,27 @@ func parseJson(target *target, jsonString *string) ([]types.Chapter, error) {
 
 		// If Date key is specified and it exists, use. If not, just use Now as the chapter's publish date
 		if target.Keys.Date != "" {
-			date, err := time.Parse(time.RFC3339, chapterJson[target.Keys.Date].(string))
+			dateFormat := target.Keys.DateFormat
+			if dateFormat == "" {
+				dateFormat = "RFC3339"
+			}
+
+			var date time.Time
+			var err error
+			if dateFormat == "unix" {
+				timestamp, ok := traverse(chapterJson, target.Keys.Date).(float64)
+				if ok {
+					intTimestamp := int64(timestamp)
+					date = time.Unix(intTimestamp/1000, (intTimestamp%1000)*int64(time.Millisecond))
+				} else {
+					err = errors.New("unable to parse timestamp: " + strconv.FormatFloat(traverse(chapterJson, target.Keys.Date).(float64), 'f', 2, 64))
+				}
+			} else if dateFormat == "RFC3339" {
+				date, err = time.Parse(time.RFC3339, traverse(chapterJson, target.Keys.Date).(string))
+			} else {
+				err = errors.New("DateFormat is invalid: " + dateFormat)
+			}
+
 			if err != nil {
 				chapter.Date = time.Now()
 			} else {

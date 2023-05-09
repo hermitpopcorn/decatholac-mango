@@ -44,11 +44,12 @@ type target struct {
 }
 
 type keys struct {
-	Chapters string
-	Number   string
-	Title    string
-	Date     string
-	Url      string
+	Chapters   string
+	Number     string
+	Title      string
+	Date       string
+	DateFormat string
+	Url        string
 }
 
 type tags struct {
