@@ -50,6 +50,7 @@ type keys struct {
 	Date       string
 	DateFormat string
 	Url        string
+	Skip       map[string]any
 }
 
 type tags struct {

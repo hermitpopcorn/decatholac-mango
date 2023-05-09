@@ -35,8 +35,16 @@ func parseJson(target *target, jsonString *string) ([]types.Chapter, error) {
 	chaptersJson := traverse(unmarshalled, target.Keys.Chapters).([]any)
 
 	// Collect chapters data into an array
-	collectData := func(chapterJson map[string]any) types.Chapter {
+	collectData := func(chapterJson map[string]any) (types.Chapter, bool) {
 		chapter := types.Chapter{}
+
+		// Check for skip
+		for key, value := range target.Keys.Skip {
+			valueInJson := traverse(chapterJson, key)
+			if valueInJson == value {
+				return chapter, true
+			}
+		}
 
 		chapter.Manga = target.Name
 
@@ -95,20 +103,24 @@ func parseJson(target *target, jsonString *string) ([]types.Chapter, error) {
 			chapter.Date = time.Now()
 		}
 
-		return chapter
+		return chapter, false
 	}
 
 	// Loop over the JSON
 	chapters := make([]types.Chapter, 0)
 	if target.AscendingSource {
 		for i := 0; i < len(chaptersJson); i++ {
-			chapter := collectData(chaptersJson[i].(map[string]any))
-			chapters = append(chapters, chapter)
+			chapter, skip := collectData(chaptersJson[i].(map[string]any))
+			if !skip {
+				chapters = append(chapters, chapter)
+			}
 		}
 	} else {
 		for i := len(chaptersJson) - 1; i >= 0; i-- {
-			chapter := collectData(chaptersJson[i].(map[string]any))
-			chapters = append(chapters, chapter)
+			chapter, skip := collectData(chaptersJson[i].(map[string]any))
+			if !skip {
+				chapters = append(chapters, chapter)
+			}
 		}
 	}
 
