@@ -1,5 +1,6 @@
 .vscode
-config.toml
+config*.toml
+!config.sample.toml
 database*.db*
 __debug_bin*
 decatholac-mango*
