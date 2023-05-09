@@ -29,11 +29,21 @@ func (e *PreoccupiedError) Error() string {
 }
 
 // This turns a source URL into a string containing the response body.
-func fetchBody(url string) (string, error) {
-	response, err := http.Get(url)
+func fetchBody(url string, headers map[string]string) (string, error) {
+	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
 	}
+
+	for key, value := range headers {
+		request.Header.Set(key, value)
+	}
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -50,7 +60,7 @@ func fetchChapters(target *target) ([]types.Chapter, error) {
 	var err error
 
 	if target.Mode == "json" {
-		body, err = fetchBody(target.Source)
+		body, err = fetchBody(target.Source, target.RequestHeaders)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +69,7 @@ func fetchChapters(target *target) ([]types.Chapter, error) {
 			return nil, err
 		}
 	} else if target.Mode == "rss" {
-		body, err = fetchBody(target.Source)
+		body, err = fetchBody(target.Source, target.RequestHeaders)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +78,7 @@ func fetchChapters(target *target) ([]types.Chapter, error) {
 			return nil, err
 		}
 	} else if target.Mode == "html" {
-		body, err = fetchBody(target.Source)
+		body, err = fetchBody(target.Source, target.RequestHeaders)
 		if err != nil {
 			return nil, err
 		}

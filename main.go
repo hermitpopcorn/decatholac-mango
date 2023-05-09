@@ -34,6 +34,7 @@ type target struct {
 	AscendingSource bool // Whether the source lists item A->Z instead of Z->A like normal
 	Mode            string
 	BaseUrl         string
+	RequestHeaders  map[string]string
 
 	// JSON mode
 	Keys keys
