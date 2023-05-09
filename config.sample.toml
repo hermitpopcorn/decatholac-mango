@@ -20,3 +20,22 @@ name = "Shounen wo Kau"
 source = "https://comic-zenon.com/rss/series/13933686331687311931"
 ascendingSource = false
 mode = "rss"
+
+[[targets]]
+mode = "json"
+name = "Kusunoki Debut"
+source = "https://comic.pixiv.net/api/app/works/8789/episodes?page=1&order=desc"
+ascendingSource = false
+baseUrl = "https://comic.pixiv.net"
+[targets.requestHeaders]
+X-Requested-With = "pixivcomic"
+Referer = "https://comic.pixiv.net/works/8789"
+[targets.keys]
+chapters = "data.episodes"
+number = "episode.numbering_title"
+title = "episode.numbering_title+episode.sub_title"
+date = "episode.read_start_at"
+dateFormat = "unix"
+url = "episode.viewer_path"
+[targets.keys.skip]
+readable = false
