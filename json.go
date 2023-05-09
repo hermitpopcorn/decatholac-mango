@@ -10,22 +10,27 @@ import (
 	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
+func traverse(data map[string]any, key string) any {
+	unpack := data
+	traverse := strings.Split(key, ".")
+	for index, key := range traverse {
+		if index < len(traverse)-1 {
+			unpack = unpack[key].(map[string]any)
+		} else {
+			return unpack[key]
+		}
+	}
+
+	return nil
+}
+
 func parseJson(target *target, jsonString *string) ([]types.Chapter, error) {
 	// Unpack the entire JSON
 	unmarshalled := make(map[string]any)
 	json.Unmarshal([]byte(*jsonString), &unmarshalled)
 
 	// Delve for the array of objects marked by targets.Keys.Chapters key
-	chaptersJson := make([]any, 0)
-	unpack := unmarshalled
-	traverse := strings.Split(target.Keys.Chapters, ".")
-	for index, key := range traverse {
-		if index < len(traverse)-1 {
-			unpack = unpack[key].(map[string]any)
-		} else {
-			chaptersJson = unpack[key].([]any)
-		}
-	}
+	chaptersJson := traverse(unmarshalled, target.Keys.Chapters).([]any)
 
 	// Collect chapters data into an array
 	collectData := func(chapterJson map[string]any) types.Chapter {
@@ -35,19 +40,22 @@ func parseJson(target *target, jsonString *string) ([]types.Chapter, error) {
 
 		keys := strings.Split(target.Keys.Title, "+")
 		if len(keys) == 1 {
-			chapter.Title = chapterJson[target.Keys.Title].(string)
+			chapter.Title = traverse(chapterJson, target.Keys.Title).(string)
 		} else if len(keys) > 1 {
 			var titleComponents []string
 			for _, k := range keys {
-				titleComponents = append(titleComponents, chapterJson[k].(string))
+				titleComponent := traverse(chapterJson, k).(string)
+				if titleComponent != "" {
+					titleComponents = append(titleComponents, titleComponent)
+				}
 			}
 			chapter.Title = strings.Join(titleComponents, " ")
 		}
 
-		chapter.Number = chapterJson[target.Keys.Number].(string)
+		chapter.Number = traverse(chapterJson, target.Keys.Number).(string)
 
 		// If the URL is relative, append the target's base URL
-		url := chapterJson[target.Keys.Url].(string)
+		url := traverse(chapterJson, target.Keys.Url).(string)
 		if strings.HasPrefix(url, "/") && target.BaseUrl != "" {
 			url = target.BaseUrl + url
 		}
