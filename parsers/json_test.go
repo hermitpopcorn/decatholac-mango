@@ -1,4 +1,4 @@
-package main
+package parsers
 
 import (
 	"testing"
@@ -10,12 +10,12 @@ import (
 func TestJsonParser(t *testing.T) {
 	// Prepare a pre-set JSON
 	testJson := `{"comic": {"episodes": [{"id": 16255,"volume": "Chapter 106","sort_volume": 113,"page_count": 0,"title": "Dat Boi","publish_start": "2022-10-11T10:00:00.000+09:00","publish_end": "2022-11-22T10:00:00.000+09:00","member_publish_start": "2022-10-11T10:00:00.000+09:00","member_publish_end": "2022-11-22T10:00:00.000+09:00","status": "public","page_url": "/comics/json/113"},{"id": 16180,"volume": "Chapter 105","sort_volume": 112,"page_count": 0,"title": "Here comes","publish_start": "2022-09-27T10:00:00.000+09:00","publish_end": "2022-11-08T10:00:00.000+09:00","member_publish_start": "2022-09-27T10:00:00.000+09:00","member_publish_end": "2022-11-08T10:00:00.000+09:00","status": "public","page_url": "/comics/json/112"}]}}`
-	testTarget := target{
+	testTarget := types.Target{
 		Name:            "JSON Test Manga",
 		Mode:            "json",
 		BaseUrl:         "https://mangacross.jp",
 		AscendingSource: false,
-		Keys: keys{
+		Keys: types.Keys{
 			Chapters: "comic.episodes",
 			Number:   "volume",
 			Title:    "volume+title",
@@ -25,7 +25,7 @@ func TestJsonParser(t *testing.T) {
 	}
 
 	// Parse
-	parsed, err := parseJson(&testTarget, &testJson)
+	parsed, err := ParseJson(&testTarget, &testJson)
 	if err != nil {
 		t.Error(err.Error())
 	}

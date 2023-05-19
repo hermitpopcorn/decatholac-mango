@@ -1,4 +1,4 @@
-package main
+package parsers
 
 import (
 	"testing"
@@ -35,12 +35,12 @@ func TestHtmlParser(t *testing.T) {
 			</ul>
 		</div>
 	`
-	testTarget := target{
+	testTarget := types.Target{
 		Name:            "HTML Test Manga",
 		Mode:            "html",
 		BaseUrl:         "https://test.com",
 		AscendingSource: false,
-		Tags: tags{
+		Tags: types.Tags{
 			ChaptersTag:     "div#chapterlist li",
 			NumberTag:       "",
 			NumberAttribute: "data-num",
@@ -53,7 +53,7 @@ func TestHtmlParser(t *testing.T) {
 	}
 
 	// Parse
-	parsed, err := parseHtml(&testTarget, &testHtml)
+	parsed, err := ParseHtml(&testTarget, &testHtml)
 	if err != nil {
 		t.Error(err.Error())
 	}

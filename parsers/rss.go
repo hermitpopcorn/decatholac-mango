@@ -1,6 +1,6 @@
 // This is the parser for RSS mode.
 
-package main
+package parsers
 
 import (
 	"strconv"
@@ -11,7 +11,7 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-func parseRss(target *target, rssString *string) ([]types.Chapter, error) {
+func ParseRss(target *types.Target, rssString *string) ([]types.Chapter, error) {
 	// Parse RSS string
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseString(*rssString)

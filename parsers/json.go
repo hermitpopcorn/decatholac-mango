@@ -1,6 +1,6 @@
 // This is the parser for JSON mode.
 
-package main
+package parsers
 
 import (
 	"encoding/json"
@@ -26,7 +26,7 @@ func traverse(data map[string]any, key string) any {
 	return nil
 }
 
-func parseJson(target *target, jsonString *string) ([]types.Chapter, error) {
+func ParseJson(target *types.Target, jsonString *string) ([]types.Chapter, error) {
 	// Unpack the entire JSON
 	unmarshalled := make(map[string]any)
 	json.Unmarshal([]byte(*jsonString), &unmarshalled)

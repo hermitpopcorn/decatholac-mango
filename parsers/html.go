@@ -1,6 +1,6 @@
 // This is the parser for HTML mode.
 
-package main
+package parsers
 
 import (
 	"strings"
@@ -38,7 +38,7 @@ func getNodeText(node *goquery.Selection, tag string, attribute string) string {
 }
 
 // Does the entire HTML parsing thing.
-func parseHtml(target *target, htmlString *string) ([]types.Chapter, error) {
+func ParseHtml(target *types.Target, htmlString *string) ([]types.Chapter, error) {
 	reader := strings.NewReader(*htmlString)
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {

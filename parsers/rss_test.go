@@ -1,4 +1,4 @@
-package main
+package parsers
 
 import (
 	"testing"
@@ -35,14 +35,14 @@ func TestRssParser(t *testing.T) {
 			</item>
 		</channel>
 	</rss>`
-	testTarget := target{
+	testTarget := types.Target{
 		Name:            "RSS Test Publishing",
 		Mode:            "rss",
 		AscendingSource: false,
 	}
 
 	// Parse
-	parsed, err := parseRss(&testTarget, &testRss)
+	parsed, err := ParseRss(&testTarget, &testRss)
 	if err != nil {
 		t.Error(err.Error())
 	}

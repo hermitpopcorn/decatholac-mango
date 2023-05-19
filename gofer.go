@@ -65,7 +65,7 @@ func fetchChapters(target *types.Target) ([]types.Chapter, error) {
 		if err != nil {
 			return nil, err
 		}
-		chapters, err = parseJson(target, &body)
+		chapters, err = parsers.ParseJson(target, &body)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +74,7 @@ func fetchChapters(target *types.Target) ([]types.Chapter, error) {
 		if err != nil {
 			return nil, err
 		}
-		chapters, err = parseRss(target, &body)
+		chapters, err = parsers.ParseRss(target, &body)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func fetchChapters(target *types.Target) ([]types.Chapter, error) {
 		if err != nil {
 			return nil, err
 		}
-		chapters, err = parseHtml(target, &body)
+		chapters, err = parsers.ParseHtml(target, &body)
 		if err != nil {
 			return nil, err
 		}
