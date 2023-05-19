@@ -23,7 +23,7 @@ func OpenSQLiteDatabase(file string) (*SQLiteDatabase, error) {
 	var db SQLiteDatabase
 
 	if file == "" {
-		file = "database.db"
+		panic("No database file specified.")
 	}
 
 	if _, err := os.Stat(file); err != nil {

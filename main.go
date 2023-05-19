@@ -21,12 +21,11 @@ import (
 )
 
 type configuration struct {
-	Token   string
-	Targets []types.Target
-
+	Database         string
+	Token            string
+	Targets          []types.Target
 	WebInterfacePort string
-
-	CronInterval string
+	CronInterval     string
 }
 
 // Read configuration file
@@ -49,10 +48,15 @@ func init() {
 var db database.Database
 
 func init() {
+	databaseFile := config.Database
+	if databaseFile == "" {
+		databaseFile = "database.db"
+	}
+
 	var err error
-	db, err = database.OpenSQLiteDatabase("database.db")
+	db, err = database.OpenSQLiteDatabase(databaseFile)
 	if err != nil {
-		log.Panicln(err.Error())
+		panic(err.Error())
 	}
 }
 
