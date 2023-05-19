@@ -72,6 +72,8 @@ func init() {
 }
 
 func main() {
+	fmt.Println(helpers.FormattedNow(), "Press Ctrl+C to exit")
+
 	// Open session
 	err := session.Open()
 	if err != nil {
@@ -138,7 +140,6 @@ func main() {
 	// Exit on Ctrl+C
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	fmt.Println(helpers.FormattedNow(), "Press Ctrl+C to exit")
 	<-stop
 
 	fmt.Println(helpers.FormattedNow(), "Goodbye...")
