@@ -1,5 +1,3 @@
-// This package contains declarations for types that are used in different packages
-
 package types
 
 import "time"

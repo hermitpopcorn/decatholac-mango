@@ -16,54 +16,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/hermitpopcorn/decatholac-mango/database"
 	"github.com/hermitpopcorn/decatholac-mango/helpers"
+	"github.com/hermitpopcorn/decatholac-mango/types"
 	"github.com/robfig/cron/v3"
 )
 
 type configuration struct {
 	Token   string
-	Targets []target
+	Targets []types.Target
 
 	WebInterfacePort string
 
 	CronInterval string
-}
-
-type target struct {
-	Name            string
-	Source          string
-	AscendingSource bool // Whether the source lists item A->Z instead of Z->A like normal
-	Mode            string
-	BaseUrl         string
-	RequestHeaders  map[string]string
-
-	// JSON mode
-	Keys keys
-
-	// HTML mode
-	Tags tags
-}
-
-type keys struct {
-	Chapters   string
-	Number     string
-	Title      string
-	Date       string
-	DateFormat string
-	Url        string
-	Skip       map[string]any
-}
-
-type tags struct {
-	ChaptersTag     string
-	NumberTag       string
-	NumberAttribute string
-	TitleTag        string
-	TitleAttribute  string
-	DateTag         string
-	DateAttribute   string
-	DateFormat      string
-	UrlTag          string
-	UrlAttribute    string
 }
 
 // Read configuration file

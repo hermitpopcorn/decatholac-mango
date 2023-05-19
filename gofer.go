@@ -12,6 +12,7 @@ import (
 
 	"github.com/hermitpopcorn/decatholac-mango/database"
 	"github.com/hermitpopcorn/decatholac-mango/helpers"
+	"github.com/hermitpopcorn/decatholac-mango/parsers"
 	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
@@ -54,7 +55,7 @@ func fetchBody(url string, headers map[string]string) (string, error) {
 }
 
 // This fetches the source and then parses it according to the specified mode.
-func fetchChapters(target *target) ([]types.Chapter, error) {
+func fetchChapters(target *types.Target) ([]types.Chapter, error) {
 	var body string
 	var chapters []types.Chapter
 	var err error
@@ -94,7 +95,7 @@ func fetchChapters(target *target) ([]types.Chapter, error) {
 // This starts a gofer process.
 // It doesn't return anything because it's supposed to be called in a goroutine.
 // It does take a *sync.WaitGroup as a parameter so it can tell the main process that it's done, though.
-func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
+func startGofer(waiter *sync.WaitGroup, db database.Database, target types.Target) {
 	var chapters []types.Chapter
 	var err error
 
@@ -147,7 +148,7 @@ func startGofer(waiter *sync.WaitGroup, db database.Database, target target) {
 
 // This is the "mother" gofer process.
 // It runs one gofer for every target.
-func startGofers(db database.Database, targets *[]target) error {
+func startGofers(db database.Database, targets *[]types.Target) error {
 	// Set on progress flag; cancel if it's up
 	if currentlyFetchingTargets {
 		return &PreoccupiedError{}
