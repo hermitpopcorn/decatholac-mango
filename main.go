@@ -8,7 +8,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 
@@ -100,42 +99,7 @@ func main() {
 	fmt.Println(helpers.FormattedNow(), "Running cron", config.CronInterval)
 
 	// Setup web interface
-	go func() {
-		http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-			html, err := os.ReadFile("web_interface.html")
-			if err != nil {
-				log.Panicln(err.Error())
-			}
-			w.Write(html)
-		})
-
-		http.HandleFunc("/fetch", func(w http.ResponseWriter, req *http.Request) {
-			if currentlyFetchingTargets {
-				w.Write([]byte("Fetching currently in progress."))
-				return
-			}
-
-			go startGofers(db, &config.Targets)
-			w.Write([]byte("Fetch process started."))
-		})
-
-		http.HandleFunc("/announce", func(w http.ResponseWriter, req *http.Request) {
-			go startAnnouncers(db)
-			w.Write([]byte("Announcement process started."))
-		})
-
-		port := config.WebInterfacePort
-		if port == "" {
-			port = ":8080"
-		} else {
-			port = ":" + config.WebInterfacePort
-		}
-
-		err := http.ListenAndServe(port, nil)
-		if err != nil {
-			log.Println(err.Error())
-		}
-	}()
+	go startWebInterface()
 
 	// Exit on Ctrl+C
 	stop := make(chan os.Signal, 1)
