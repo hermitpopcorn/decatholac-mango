@@ -75,3 +75,73 @@ func TestJsonParser(t *testing.T) {
 		t.Error("Different second element", parsed[1], secondChapter)
 	}
 }
+
+func TestJsonParserWithSkipKeys(t *testing.T) {
+	// Prepare a pre-set JSON
+	testJson := `{"data":{"episodes":[{"readable":true,"episode":{"id":8,"numbering_title":"Chapter 8","sub_title":"The End","read_start_at":1681959600000,"viewer_path":"/viewer/stories/82"}},{"readable":false,"message":"Chapter 3~7 is now GONE"},{"readable":true,"episode":{"id":96352,"numbering_title":"Chapter 2","sub_title":"The Revolution","read_start_at":1622689200000,"viewer_path":"/viewer/stories/2"}},{"readable":true,"episode":{"id":95786,"numbering_title":"Chapter 1","sub_title":"The Pilot","read_start_at":1622084400000,"viewer_path":"/viewer/stories/1"}}]}}`
+	testTarget := types.Target{
+		Name:            "JSON Test Manga",
+		Mode:            "json",
+		BaseUrl:         "https://mangacross.jp",
+		AscendingSource: false,
+		Keys: types.Keys{
+			Chapters:   "data.episodes",
+			Number:     "episode.numbering_title+episode.sub_title",
+			Title:      "episode.numbering_title+episode.sub_title",
+			Date:       "episode.read_start_at",
+			DateFormat: "unix",
+			Url:        "episode.viewer_path",
+			Skip: map[string]any{
+				"readable": false,
+			},
+		},
+	}
+
+	// Parse
+	parsed, err := ParseJson(&testTarget, &testJson)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// Compare array length
+	if len(parsed) != 3 {
+		t.Error("Size mismatch: expected 3, found", len(parsed))
+	}
+
+	// Check if the second element is correct
+	intTimestamp := int64(1622689200000)
+	secondDate := time.Unix(intTimestamp/1000, (intTimestamp%1000)*int64(time.Millisecond))
+	secondChapter := types.Chapter{
+		Manga:  "JSON Test Manga",
+		Number: "Chapter 2 The Revolution",
+		Title:  "Chapter 2 The Revolution",
+		Date:   secondDate,
+		Url:    "https://mangacross.jp/viewer/stories/2",
+	}
+	if parsed[1].Manga != secondChapter.Manga ||
+		parsed[1].Title != secondChapter.Title ||
+		parsed[1].Number != secondChapter.Number ||
+		parsed[1].Url != secondChapter.Url ||
+		parsed[1].Date.Unix() != secondChapter.Date.Unix() {
+		t.Error("Different second element", parsed[1], secondChapter)
+	}
+
+	// Check if the last element is correct
+	// (should skip the "unreadable" entry)
+	intTimestamp = int64(1681959600000)
+	thirdDate := time.Unix(intTimestamp/1000, (intTimestamp%1000)*int64(time.Millisecond))
+	thirdChapter := types.Chapter{
+		Manga:  "JSON Test Manga",
+		Number: "Chapter 8 The End",
+		Title:  "Chapter 8 The End",
+		Date:   thirdDate,
+		Url:    "https://mangacross.jp/viewer/stories/82",
+	}
+	if parsed[2].Manga != thirdChapter.Manga ||
+		parsed[2].Title != thirdChapter.Title ||
+		parsed[2].Number != thirdChapter.Number ||
+		parsed[2].Url != thirdChapter.Url ||
+		parsed[2].Date.Unix() != thirdChapter.Date.Unix() {
+		t.Error("Different last element", parsed[2], thirdChapter)
+	}
+}
