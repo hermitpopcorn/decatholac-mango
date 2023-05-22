@@ -12,6 +12,24 @@ import (
 	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
+func parseComponent(json map[string]any, key string) string {
+	keys := strings.Split(key, "+")
+
+	var titleComponents []string
+	if len(keys) == 1 {
+		titleComponents = append(titleComponents, traverse(json, key).(string))
+	} else if len(keys) > 1 {
+		for _, k := range keys {
+			titleComponent := traverse(json, k).(string)
+			if titleComponent != "" {
+				titleComponents = append(titleComponents, titleComponent)
+			}
+		}
+	}
+
+	return strings.Join(titleComponents, " ")
+}
+
 func traverse(data map[string]any, key string) any {
 	unpack := data
 	traverse := strings.Split(key, ".")
@@ -46,23 +64,10 @@ func ParseJson(target *types.Target, jsonString *string) ([]types.Chapter, error
 			}
 		}
 
+		// Get chapter data
 		chapter.Manga = target.Name
-
-		keys := strings.Split(target.Keys.Title, "+")
-		if len(keys) == 1 {
-			chapter.Title = traverse(chapterJson, target.Keys.Title).(string)
-		} else if len(keys) > 1 {
-			var titleComponents []string
-			for _, k := range keys {
-				titleComponent := traverse(chapterJson, k).(string)
-				if titleComponent != "" {
-					titleComponents = append(titleComponents, titleComponent)
-				}
-			}
-			chapter.Title = strings.Join(titleComponents, " ")
-		}
-
-		chapter.Number = traverse(chapterJson, target.Keys.Number).(string)
+		chapter.Title = parseComponent(chapterJson, target.Keys.Title)
+		chapter.Number = parseComponent(chapterJson, target.Keys.Number)
 
 		// If the URL is relative, append the target's base URL
 		url := traverse(chapterJson, target.Keys.Url).(string)
