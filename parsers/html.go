@@ -77,7 +77,7 @@ func ParseHtml(target *types.Target, htmlString *string) ([]types.Chapter, error
 		if len(url) < 1 {
 			return
 		}
-		chapter.Url = url
+		chapter.Url = makeFullUrl(url, target.BaseUrl)
 
 		// Get publish date
 		chapter.Date = time.Now()

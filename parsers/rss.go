@@ -4,7 +4,6 @@ package parsers
 
 import (
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/hermitpopcorn/decatholac-mango/types"
@@ -33,10 +32,7 @@ func ParseRss(target *types.Target, rssString *string) ([]types.Chapter, error) 
 
 		// If the URL is relative, append the target's base URL
 		url := chapterFeedItem.Link
-		if strings.HasPrefix(url, "/") && target.BaseUrl != "" {
-			url = target.BaseUrl + url
-		}
-		chapter.Url = url
+		chapter.Url = makeFullUrl(url, target.BaseUrl)
 
 		// If Date key is specified and it exists, use. If not, just use Now as the chapter's publish date
 		if len(chapterFeedItem.Published) > 0 {

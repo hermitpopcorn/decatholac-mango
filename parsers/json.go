@@ -70,11 +70,8 @@ func ParseJson(target *types.Target, jsonString *string) ([]types.Chapter, error
 		chapter.Number = parseComponent(chapterJson, target.Keys.Number)
 
 		// If the URL is relative, append the target's base URL
-		url := traverse(chapterJson, target.Keys.Url).(string)
-		if strings.HasPrefix(url, "/") && target.BaseUrl != "" {
-			url = target.BaseUrl + url
-		}
-		chapter.Url = url
+		url := parseComponent(chapterJson, target.Keys.Url)
+		chapter.Url = makeFullUrl(url, target.BaseUrl)
 
 		// If Date key is specified and it exists, use. If not, just use Now as the chapter's publish date
 		if target.Keys.Date != "" {
