@@ -12,38 +12,34 @@ import (
 	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
-func parseComponent(json map[string]any, key string) string {
+func parseComponent(data map[string]any, key string) string {
 	keys := strings.Split(key, "+")
 
-	var titleComponents []string
-	if len(keys) == 1 {
-		titleComponents = append(titleComponents, traverse(json, key).(string))
-	} else if len(keys) > 1 {
-		for _, k := range keys {
-			titleComponent := traverse(json, k).(string)
-			if titleComponent != "" {
-				titleComponents = append(titleComponents, titleComponent)
-			}
+	var components []string
+	for _, k := range keys {
+		component := traverse(data, k).(string)
+		if component != "" {
+			components = append(components, component)
 		}
 	}
 
-	return strings.Join(titleComponents, " ")
+	return strings.Join(components, " ")
 }
 
 func traverse(data map[string]any, key string) any {
-	unpack := data
 	traverse := strings.Split(key, ".")
 	for index, key := range traverse {
 		if index < len(traverse)-1 {
-			unpack = unpack[key].(map[string]any)
+			data = data[key].(map[string]any)
 		} else {
-			return unpack[key]
+			return data[key]
 		}
 	}
 
 	return nil
 }
 
+// Parses the given JSON string using the target information and returns an array of Chapters.
 func ParseJson(target *types.Target, jsonString *string) ([]types.Chapter, error) {
 	// Unpack the entire JSON
 	unmarshalled := make(map[string]any)
@@ -68,8 +64,6 @@ func ParseJson(target *types.Target, jsonString *string) ([]types.Chapter, error
 		chapter.Manga = target.Name
 		chapter.Title = parseComponent(chapterJson, target.Keys.Title)
 		chapter.Number = parseComponent(chapterJson, target.Keys.Number)
-
-		// If the URL is relative, append the target's base URL
 		url := parseComponent(chapterJson, target.Keys.Url)
 		chapter.Url = makeFullUrl(url, target.BaseUrl)
 
