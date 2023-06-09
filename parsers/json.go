@@ -5,7 +5,6 @@ package parsers
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 	"strings"
 	"time"
 
@@ -82,12 +81,17 @@ func ParseJson(target *types.Target, jsonString *string) ([]types.Chapter, error
 					intTimestamp := int64(timestamp)
 					date = time.Unix(intTimestamp/1000, (intTimestamp%1000)*int64(time.Millisecond))
 				} else {
-					err = errors.New("unable to parse timestamp: " + strconv.FormatFloat(traverse(chapterJson, target.Keys.Date).(float64), 'f', 2, 64))
+					err = errors.New("unable to parse timestamp")
 				}
 			} else if dateFormat == "RFC3339" {
-				date, err = time.Parse(time.RFC3339, traverse(chapterJson, target.Keys.Date).(string))
+				dateString, ok := traverse(chapterJson, target.Keys.Date).(string)
+				if ok {
+					date, err = time.Parse(time.RFC3339, dateString)
+				} else {
+					err = errors.New("unable to parse RFC3339 date")
+				}
 			} else {
-				err = errors.New("DateFormat is invalid: " + dateFormat)
+				err = errors.New("dateFormat is invalid: " + dateFormat)
 			}
 
 			if err != nil {
