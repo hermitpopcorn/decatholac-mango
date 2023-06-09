@@ -10,27 +10,29 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+// Parses the given RSS string using the target information and returns an array of Chapters.
 func ParseRss(target *types.Target, rssString *string) ([]types.Chapter, error) {
-	// Parse RSS string
+	// Parse RSS string into a feed object
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseString(*rssString)
 	if err != nil {
 		return nil, err
 	}
 
-	// Collect chapters data into an array
+	// Closure to build a Chapter object from a feed entry
 	collectData := func(chapterFeedItem gofeed.Item, counter uint64) types.Chapter {
 		chapter := types.Chapter{}
 
 		chapter.Manga = target.Name
 		chapter.Title = chapterFeedItem.Title
+
+		// Use GUID as chapter Number, or if it does not exist, use the loop's index
 		if len(chapterFeedItem.GUID) > 0 {
 			chapter.Number = chapterFeedItem.GUID
 		} else {
 			chapter.Number = strconv.FormatUint(counter, 10)
 		}
 
-		// If the URL is relative, append the target's base URL
 		url := chapterFeedItem.Link
 		chapter.Url = makeFullUrl(url, target.BaseUrl)
 

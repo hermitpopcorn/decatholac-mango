@@ -8,7 +8,7 @@ import (
 )
 
 func TestRssParser(t *testing.T) {
-	// Prepare a pre-set JSON
+	// Prepare a pre-set RSS
 	testRss := `<?xml version="1.0"?>
 	<rss version="2.0" xmlns:giga="https://gigaviewer.com">
 		<channel>

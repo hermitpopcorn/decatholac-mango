@@ -8,7 +8,7 @@ import (
 )
 
 func TestHtmlParser(t *testing.T) {
-	// Prepare a pre-set JSON
+	// Prepare a pre-set HTML
 	testHtml := `
 		<div class="eplister" id="chapterlist">
 			<ul class="clstyle">

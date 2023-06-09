@@ -37,7 +37,7 @@ func getNodeText(node *goquery.Selection, tag string, attribute string) string {
 	}
 }
 
-// Does the entire HTML parsing thing.
+// Parses the given HTML string using the target information and returns an array of Chapters.
 func ParseHtml(target *types.Target, htmlString *string) ([]types.Chapter, error) {
 	reader := strings.NewReader(*htmlString)
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -94,7 +94,7 @@ func ParseHtml(target *types.Target, htmlString *string) ([]types.Chapter, error
 		chapters = append(chapters, chapter)
 	})
 
-	// Reverse the array if the souce is in descending order
+	// Reverse the array if the source is in descending order
 	if !target.AscendingSource {
 		for i, j := 0, len(chapters)-1; i < j; i, j = i+1, j-1 {
 			chapters[i], chapters[j] = chapters[j], chapters[i]

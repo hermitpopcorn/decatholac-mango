@@ -11,6 +11,7 @@ import (
 	"github.com/hermitpopcorn/decatholac-mango/types"
 )
 
+// Traverses to one or more values and then concatenates them.
 func parseComponent(data map[string]any, key string) string {
 	keys := strings.Split(key, "+")
 
@@ -25,6 +26,7 @@ func parseComponent(data map[string]any, key string) string {
 	return strings.Join(components, " ")
 }
 
+// Traverse the given data map using dot notation and returns the value.
 func traverse(data map[string]any, key string) any {
 	traverse := strings.Split(key, ".")
 	for index, key := range traverse {
