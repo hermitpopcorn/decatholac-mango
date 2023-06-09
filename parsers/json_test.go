@@ -9,7 +9,39 @@ import (
 
 func TestJsonParser(t *testing.T) {
 	// Prepare a pre-set JSON
-	testJson := `{"comic": {"episodes": [{"id": 16255,"volume": "Chapter 106","sort_volume": 113,"page_count": 0,"title": "Dat Boi","publish_start": "2022-10-11T10:00:00.000+09:00","publish_end": "2022-11-22T10:00:00.000+09:00","member_publish_start": "2022-10-11T10:00:00.000+09:00","member_publish_end": "2022-11-22T10:00:00.000+09:00","status": "public","page_url": "/comics/json/113"},{"id": 16180,"volume": "Chapter 105","sort_volume": 112,"page_count": 0,"title": "Here comes","publish_start": "2022-09-27T10:00:00.000+09:00","publish_end": "2022-11-08T10:00:00.000+09:00","member_publish_start": "2022-09-27T10:00:00.000+09:00","member_publish_end": "2022-11-08T10:00:00.000+09:00","status": "public","page_url": "/comics/json/112"}]}}`
+	testJson := `
+	{
+		"comic": {
+			"episodes": [
+				{
+					"id": 16255,
+					"volume": "Chapter 106",
+					"sort_volume": 113,
+					"page_count": 0,
+					"title": "Dat Boi",
+					"publish_start": "2022-10-11T10:00:00.000+09:00",
+					"publish_end": "2022-11-22T10:00:00.000+09:00",
+					"member_publish_start": "2022-10-11T10:00:00.000+09:00",
+					"member_publish_end": "2022-11-22T10:00:00.000+09:00",
+					"status": "public",
+					"page_url": "/comics/json/113"
+				},
+				{
+					"id": 16180,
+					"volume": "Chapter 105",
+					"sort_volume": 112,
+					"page_count": 0,
+					"title": "Here comes",
+					"publish_start": "2022-09-27T10:00:00.000+09:00",
+					"publish_end": "2022-11-08T10:00:00.000+09:00",
+					"member_publish_start": "2022-09-27T10:00:00.000+09:00",
+					"member_publish_end": "2022-11-08T10:00:00.000+09:00",
+					"status": "public",
+					"page_url": "/comics/json/112"
+				}
+			]
+		}
+	}`
 	testTarget := types.Target{
 		Name:            "JSON Test Manga",
 		Mode:            "json",
@@ -78,7 +110,44 @@ func TestJsonParser(t *testing.T) {
 
 func TestJsonParserWithSkipKeys(t *testing.T) {
 	// Prepare a pre-set JSON
-	testJson := `{"data":{"episodes":[{"readable":true,"episode":{"id":8,"numbering_title":"Chapter 8","sub_title":"The End","read_start_at":1681959600000,"viewer_path":"/viewer/stories/82"}},{"readable":false,"message":"Chapter 3~7 is now GONE"},{"readable":true,"episode":{"id":96352,"numbering_title":"Chapter 2","sub_title":"The Revolution","read_start_at":1622689200000,"viewer_path":"/viewer/stories/2"}},{"readable":true,"episode":{"id":95786,"numbering_title":"Chapter 1","sub_title":"The Pilot","read_start_at":1622084400000,"viewer_path":"/viewer/stories/1"}}]}}`
+	testJson := `
+	{
+		"data": {
+			"episodes": [
+				{
+					"readable": true,
+					"episode": {
+					"id": 8,
+					"numbering_title": "Chapter 8",
+					"sub_title": "The End",
+					"read_start_at": 1681959600000,
+					"viewer_path": "/viewer/stories/82"
+					}
+				},
+				{ "readable": false, "message": "Chapter 3~7 is now GONE" },
+				{
+					"readable": true,
+					"episode": {
+					"id": 96352,
+					"numbering_title": "Chapter 2",
+					"sub_title": "The Revolution",
+					"read_start_at": 1622689200000,
+					"viewer_path": "/viewer/stories/2"
+					}
+				},
+				{
+					"readable": true,
+					"episode": {
+					"id": 95786,
+					"numbering_title": "Chapter 1",
+					"sub_title": "The Pilot",
+					"read_start_at": 1622084400000,
+					"viewer_path": "/viewer/stories/1"
+					}
+				}
+			]
+		}
+	}`
 	testTarget := types.Target{
 		Name:            "JSON Test Manga",
 		Mode:            "json",
