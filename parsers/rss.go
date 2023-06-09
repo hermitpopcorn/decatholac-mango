@@ -46,16 +46,13 @@ func ParseRss(target *types.Target, rssString *string) ([]types.Chapter, error) 
 
 	// Loop over the feed items
 	chapters := make([]types.Chapter, 0)
-	if target.AscendingSource {
-		for i := 0; i < len(feed.Items); i++ {
-			chapter := collectData(*feed.Items[i], uint64(i+1))
-			chapters = append(chapters, chapter)
+	for i := 0; i < len(feed.Items); i++ {
+		index := i
+		if !target.AscendingSource {
+			index = len(feed.Items) - 1 - i
 		}
-	} else {
-		for i := len(feed.Items) - 1; i >= 0; i-- {
-			chapter := collectData(*feed.Items[i], uint64(i+1))
-			chapters = append(chapters, chapter)
-		}
+		chapter := collectData(*feed.Items[index], uint64(index+1))
+		chapters = append(chapters, chapter)
 	}
 
 	return chapters, nil

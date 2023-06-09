@@ -104,19 +104,15 @@ func ParseJson(target *types.Target, jsonString *string) ([]types.Chapter, error
 
 	// Loop over the JSON
 	chapters := make([]types.Chapter, 0)
-	if target.AscendingSource {
-		for i := 0; i < len(chaptersJson); i++ {
-			chapter, skip := collectData(chaptersJson[i].(map[string]any))
-			if !skip {
-				chapters = append(chapters, chapter)
-			}
+	for i := 0; i < len(chaptersJson); i++ {
+		index := i
+		if !target.AscendingSource {
+			index = len(chaptersJson) - 1 - i
 		}
-	} else {
-		for i := len(chaptersJson) - 1; i >= 0; i-- {
-			chapter, skip := collectData(chaptersJson[i].(map[string]any))
-			if !skip {
-				chapters = append(chapters, chapter)
-			}
+
+		chapter, skip := collectData(chaptersJson[index].(map[string]any))
+		if !skip {
+			chapters = append(chapters, chapter)
 		}
 	}
 
