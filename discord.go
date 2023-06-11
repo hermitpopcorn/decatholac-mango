@@ -304,8 +304,13 @@ func getCommandHandlers() map[string]func(s *discordgo.Session, i *discordgo.Int
 }
 
 // Unregister commands
-func unregisterCommands(commands []*discordgo.ApplicationCommand) {
-	for _, command := range commands {
+func unregisterCommands() {
+	registeredCommands, err := session.ApplicationCommands(session.State.User.ID, "")
+	if err != nil {
+		log.Panicf("Failed retrieving registered commands")
+	}
+
+	for _, command := range registeredCommands {
 		err := session.ApplicationCommandDelete(session.State.User.ID, "", command.ID)
 		if err != nil {
 			log.Panicf("Cannot delete '%v' command: %v", command.Name, err)

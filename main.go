@@ -81,7 +81,7 @@ func main() {
 	defer session.Close()
 
 	// Setup Discord commands
-	var commands = registerCommands()
+	registerCommands()
 
 	// Setup cron
 	job := func() {
@@ -109,7 +109,7 @@ func main() {
 	fmt.Println(helpers.FormattedNow(), "Goodbye...")
 
 	// Remove commands
-	unregisterCommands(commands)
+	unregisterCommands()
 
 	// Close database
 	db.Close()
