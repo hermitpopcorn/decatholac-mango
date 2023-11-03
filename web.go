@@ -28,8 +28,12 @@ func startWebInterface() {
 	})
 
 	http.HandleFunc("/announce", func(w http.ResponseWriter, req *http.Request) {
-		go startAnnouncers(db)
-		w.Write([]byte("Announcement process started."))
+		if session != nil {
+			go startAnnouncers(db)
+			w.Write([]byte("Announcement process started."))
+		} else {
+			w.Write([]byte("Could not start announcement process: no Discord session."))
+		}
 	})
 
 	port := config.WebInterfacePort

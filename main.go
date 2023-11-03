@@ -66,7 +66,7 @@ func init() {
 	var err error
 	session, err = discordgo.New("Bot " + config.Token)
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Println(err.Error())
 	}
 }
 
@@ -76,20 +76,28 @@ func main() {
 	// Open session
 	err := session.Open()
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Println(err.Error())
+		session = nil
+	} else {
+		defer session.Close()
 	}
-	defer session.Close()
 
 	// Setup Discord commands
-	registerCommands()
+	if session != nil {
+		registerCommands()
+	}
 
 	// Setup cron
 	job := func() {
 		fmt.Println(helpers.FormattedNow(), "Fetch process triggered by cronjob")
 		startGofers(db, &config.Targets)
 
-		fmt.Println(helpers.FormattedNow(), "Global announcement process triggered by cronjob")
-		startAnnouncers(db)
+		if session != nil {
+			fmt.Println(helpers.FormattedNow(), "Global announcement process triggered by cronjob")
+			startAnnouncers(db)
+		} else {
+			fmt.Println(helpers.FormattedNow(), "Global announcement process halted: no Discord session")
+		}
 	}
 	cron := cron.New()
 	cron.AddFunc(config.CronInterval, job)
@@ -109,7 +117,9 @@ func main() {
 	fmt.Println(helpers.FormattedNow(), "Goodbye...")
 
 	// Remove commands
-	unregisterCommands()
+	if session != nil {
+		unregisterCommands()
+	}
 
 	// Close database
 	db.Close()
